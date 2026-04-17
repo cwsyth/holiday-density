@@ -90,15 +90,15 @@ function buildGermanyNationalPeriods(): HolidayPeriod[] {
   return periods;
 }
 
+/** First year covered by the holiday data arrays (index 0). */
+const HOLIDAY_DATA_START_YEAR = 2025;
+
 /**
- * Summer holiday dates per German state per year.
- * Tuple: [startMonth, startDay, endMonth, endDay]
- * 2025 & 2026: official KMK dates. 2027-2030: estimates following the rotation pattern.
- *
- * Index order: [2025, 2026, 2027, 2028, 2029, 2030]
+ * A compact encoding of a school-break period: [startMonth, startDay, endMonth, endDay].
+ * Used for summer, winter/carnival, and autumn breaks in the German state lookup tables.
  */
-type SummerTuple = [number, number, number, number];
-const DE_SUMMER: Record<string, SummerTuple[]> = {
+type BreakTuple = [number, number, number, number];
+const DE_SUMMER: Record<string, BreakTuple[]> = {
   // Nordrhein-Westfalen
   NW: [[6,30,8,12],[6,29,8,11],[6,28,8,10],[6,30,8,12],[6,28,8,10],[6,29,8,11]],
   // Bayern
@@ -134,10 +134,10 @@ const DE_SUMMER: Record<string, SummerTuple[]> = {
 };
 
 /**
- * Winter/Carnival break [startMonth, startDay, endMonth, endDay] per state.
+ * Winter/Carnival break per state.
  * Index order: [2025, 2026, 2027, 2028, 2029, 2030]
  */
-const DE_WINTER: Record<string, SummerTuple[]> = {
+const DE_WINTER: Record<string, BreakTuple[]> = {
   // Carnival / Fasching states
   BW: [[2,24,3, 7],[2,23,3, 6],[2,22,3, 5],[2,24,3, 7],[2,24,3, 6],[2,23,3, 5]],
   BY: [[2,27,3, 7],[2,16,2,20],[2,15,2,19],[2,19,2,23],[2,17,2,21],[2,16,2,20]],
@@ -160,10 +160,10 @@ const DE_WINTER: Record<string, SummerTuple[]> = {
 };
 
 /**
- * Autumn break [startMonth, startDay, endMonth, endDay] per state.
+ * Autumn break per state.
  * Index order: [2025, 2026, 2027, 2028, 2029, 2030]
  */
-const DE_AUTUMN: Record<string, SummerTuple[]> = {
+const DE_AUTUMN: Record<string, BreakTuple[]> = {
   NW: [[10,13,10,25],[10,12,10,24],[10,11,10,23],[10,14,10,26],[10,13,10,25],[10,11,10,24]],
   BY: [[10,31,11, 7],[10,31,11, 6],[10,30,11, 6],[11, 1,11, 7],[10,31,11, 7],[10,30,11, 6]],
   BW: [[10,28,10,31],[10,26,10,30],[10,25,10,29],[10,28,10,31],[10,27,10,30],[10,28,10,31]],
@@ -187,7 +187,7 @@ function buildStateSchoolHolidays(
   year: number,
   easter: Date,
 ): HolidayPeriod[] {
-  const idx = year - 2025; // index into per-year arrays
+  const idx = year - HOLIDAY_DATA_START_YEAR; // index into per-year arrays
   const out: HolidayPeriod[] = [];
 
   // Summer holidays
@@ -296,7 +296,7 @@ const DE_STATES: StateInfo[] = [
   { code: 'ST', name: 'Sachsen-Anhalt',      population:  2_200 },
   { code: 'TH', name: 'Thüringen',          population:  2_100 },
   { code: 'HH', name: 'Hamburg',             population:  1_900 },
-  { code: 'MV', name: 'Mecklenburg-Vorp.',   population:  1_600 },
+  { code: 'MV', name: 'Mecklenburg-Vorpommern', population:  1_600 },
   { code: 'SL', name: 'Saarland',            population:  1_000 },
   { code: 'HB', name: 'Bremen',              population:    700 },
 ];
