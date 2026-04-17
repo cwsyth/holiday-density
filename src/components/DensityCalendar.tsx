@@ -29,8 +29,10 @@ function densityColor(density: number, max: number): string {
     'bg-indigo-800',
     'bg-indigo-900',
   ];
+  // When max is 1, there's only one possible non-zero density value
+  if (max <= 1) return colors[colors.length - 1];
   const idx = Math.min(density - 1, colors.length - 1);
-  // scale to max if max < 10
+  // Scale to the full color range when there are fewer countries than color steps
   if (max <= colors.length) {
     const scaled = Math.round(((density - 1) / (max - 1)) * (colors.length - 1));
     return colors[Math.min(scaled, colors.length - 1)];

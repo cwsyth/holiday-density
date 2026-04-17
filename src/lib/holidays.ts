@@ -49,11 +49,13 @@ function dateOf(year: number, month: number, day: number): Date {
   return new Date(year, month - 1, day);
 }
 
+const MS_PER_DAY = 86400000;
+
 // Shift a date string by offsetting the year and keeping approximate week
 function shiftYear(isoDate: string, targetYear: number): string {
   const [y, m, d] = isoDate.split('-').map(Number);
   const original = new Date(y, m - 1, d);
-  const dayOfYear = Math.floor((original.getTime() - new Date(y, 0, 0).getTime()) / 86400000);
+  const dayOfYear = Math.floor((original.getTime() - new Date(y, 0, 1).getTime()) / MS_PER_DAY) + 1;
   const target = new Date(targetYear, 0, dayOfYear);
   return fmt(target);
 }
