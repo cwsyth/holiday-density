@@ -98,23 +98,6 @@ export default function Home() {
           </CardContent>
         </Card>
 
-        {/* Country grid overview */}
-        {activeTab === 'all' && (
-          <div className="mt-6 grid grid-cols-2 sm:grid-cols-5 gap-3">
-            {COUNTRIES.map((c) => (
-              <button
-                key={c.code}
-                onClick={() => setActiveTab(c.code)}
-                className="bg-white rounded-lg border border-gray-200 p-3 text-left hover:border-indigo-300 hover:shadow-sm transition-all group"
-              >
-                <div className="text-xl mb-1">{c.flag}</div>
-                <div className="text-xs font-medium text-gray-700 group-hover:text-indigo-600">{c.name}</div>
-                <div className="text-[10px] text-gray-400 mt-0.5">{c.code}</div>
-              </button>
-            ))}
-          </div>
-        )}
-
         <footer className="mt-8 text-center text-xs text-gray-400">
           Holiday data is approximate. Public holidays and school holiday periods vary by region.
         </footer>
