@@ -53,15 +53,15 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
 
   return (
     <TooltipProvider delayDuration={100}>
-      <div className="w-full overflow-x-auto">
-        <div className="min-w-[700px]">
+      <div className="w-full overflow-x-auto -mx-1 px-1">
+        <div className="min-w-[340px]">
           {/* Month header */}
           <div className="flex">
-            <div className="w-7 shrink-0" />
+            <div className="w-5 sm:w-7 shrink-0" />
             {MONTHS.map((month) => (
               <div
                 key={month}
-                className="flex-1 text-center text-xs font-semibold text-gray-500 pb-1"
+                className="flex-1 text-center text-[10px] sm:text-xs font-semibold text-gray-500 pb-1"
               >
                 {month}
               </div>
@@ -72,7 +72,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
           {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
             <div key={day} className="flex items-center gap-0">
               {/* Day label */}
-              <div className="w-7 shrink-0 text-right pr-1 text-xs text-gray-400 font-mono leading-none">
+              <div className="w-5 sm:w-7 shrink-0 text-right pr-0.5 sm:pr-1 text-[10px] sm:text-xs text-gray-400 font-mono leading-none">
                 {day}
               </div>
 
@@ -90,7 +90,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
                   return (
                     <div
                       key={monthIdx}
-                      className="flex-1 h-4 m-px rounded-sm bg-gray-50"
+                      className="flex-1 h-3 sm:h-4 m-px rounded-sm bg-gray-50"
                     />
                   );
                 }
@@ -105,7 +105,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
                   <Tooltip key={monthIdx}>
                     <TooltipTrigger asChild>
                       <div
-                        className={`flex-1 h-4 m-px rounded-sm cursor-default transition-opacity hover:opacity-80 ${bg} ${isWeekend ? 'ring-1 ring-inset ring-black/10' : ''}`}
+                        className={`flex-1 h-3 sm:h-4 m-px rounded-sm cursor-default transition-opacity hover:opacity-80 ${bg} ${isWeekend ? 'ring-1 ring-inset ring-black/10' : ''}`}
                       />
                     </TooltipTrigger>
                     <TooltipContent side="top" className="text-xs">
@@ -141,7 +141,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
 
           {/* Weekend indicator row */}
           <div className="flex mt-2">
-            <div className="w-7 shrink-0" />
+            <div className="w-5 sm:w-7 shrink-0" />
             <div className="flex-1 flex items-center gap-1 text-xs text-gray-400">
               <div className="w-3 h-3 rounded-sm ring-1 ring-inset ring-black/10 bg-gray-100" />
               <span>Weekend</span>
@@ -149,14 +149,14 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
           </div>
 
           {/* Legend */}
-          <div className="mt-4 flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-gray-500 font-medium">Population on holiday:</span>
+          <div className="mt-4 flex items-center gap-1.5 sm:gap-2 flex-wrap">
+            <span className="text-xs text-gray-500 font-medium w-full sm:w-auto">Population on holiday:</span>
             {Array.from({ length: DENSITY_MAX + 1 }, (_, i) => i).map((step) => (
-              <div key={step} className="flex items-center gap-1">
+              <div key={step} className="flex items-center gap-0.5 sm:gap-1">
                 <div
-                  className={`w-4 h-4 rounded-sm ${densityColor(step)}`}
+                  className={`w-3 h-3 sm:w-4 sm:h-4 rounded-sm ${densityColor(step)}`}
                 />
-                <span className="text-xs text-gray-500">{step * 10}%</span>
+                <span className="text-[10px] sm:text-xs text-gray-500">{step * 10}%</span>
               </div>
             ))}
           </div>
