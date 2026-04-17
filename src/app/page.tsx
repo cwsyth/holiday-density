@@ -21,11 +21,11 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <div className="max-w-[1400px] mx-auto px-4 py-8">
+      <div className="max-w-[1400px] mx-auto px-3 sm:px-4 py-4 sm:py-8">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-4 sm:mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-bold text-gray-900">Holiday Density</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Holiday Density</h1>
             <Badge variant="secondary" className="text-xs">2025–2030</Badge>
           </div>
           <p className="text-gray-500 text-sm max-w-2xl">
@@ -37,7 +37,7 @@ export default function Home() {
         </div>
 
         <Card className="shadow-sm">
-          <CardHeader className="pb-4">
+          <CardHeader className="pb-4 px-3 sm:px-6">
             {/* Year selector */}
             <div className="flex items-center gap-2 flex-wrap mb-4">
               <span className="text-sm font-medium text-gray-600 mr-1">Year:</span>
@@ -95,7 +95,7 @@ export default function Home() {
             </div>
           </CardHeader>
 
-          <CardContent>
+          <CardContent className="px-3 sm:px-6">
             <DensityCalendar year={year} countryCodes={countryCodes} />
           </CardContent>
         </Card>
