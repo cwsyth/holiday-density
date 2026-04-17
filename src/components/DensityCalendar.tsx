@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { getDensityMap, getHolidaysForCountry, COUNTRIES } from '@/lib/holidays';
+import { getDensityMap, isCountryOnHoliday, getGermanStatesOnHoliday, COUNTRIES } from '@/lib/holidays';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type Props = {
@@ -11,11 +11,14 @@ type Props = {
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+/** Density scale is always 0–10 (representing 0 %–100 % of population). */
+const DENSITY_MAX = 10;
+
 function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
 }
 
-function densityColor(density: number, max: number): string {
+function densityColor(density: number): string {
   if (density === 0) return 'bg-gray-100';
   const colors = [
     'bg-blue-100',
@@ -29,15 +32,8 @@ function densityColor(density: number, max: number): string {
     'bg-indigo-800',
     'bg-indigo-900',
   ];
-  // When max is 1, there's only one possible non-zero density value
-  if (max <= 1) return colors[colors.length - 1];
-  const idx = Math.min(density - 1, colors.length - 1);
-  // Scale to the full color range when there are fewer countries than color steps
-  if (max <= colors.length) {
-    const scaled = Math.round(((density - 1) / (max - 1)) * (colors.length - 1));
-    return colors[Math.min(scaled, colors.length - 1)];
-  }
-  return colors[idx];
+  // density 1 → colors[0], density 10 → colors[9]
+  return colors[Math.min(density - 1, colors.length - 1)];
 }
 
 
@@ -47,14 +43,9 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
     [year, countryCodes]
   );
 
-  const maxDensity = countryCodes.length;
-
-  const legendSteps = React.useMemo(() => {
-    if (maxDensity === 1) return [0, 1];
-    const steps: number[] = [];
-    for (let i = 0; i <= maxDensity; i++) steps.push(i);
-    return steps;
-  }, [maxDensity]);
+  const isSingleCountry = countryCodes.length === 1;
+  const singleCountryCode = isSingleCountry ? countryCodes[0] : null;
+  const isGermany = singleCountryCode === 'DE';
 
   const countryNames = React.useMemo(() => {
     return COUNTRIES.filter((c) => countryCodes.includes(c.code));
@@ -104,7 +95,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
                   );
                 }
 
-                const bg = density !== null ? densityColor(density, maxDensity) : 'bg-gray-50';
+                const bg = density !== null ? densityColor(density) : 'bg-gray-50';
 
                 const date = new Date(year, monthIdx, day);
                 const weekday = date.toLocaleDateString('en-US', { weekday: 'short' });
@@ -123,24 +114,22 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
                       </div>
                       {density !== null && density > 0 ? (
                         <div className="mt-0.5 text-blue-300">
-                          {density} of {maxDensity}{' '}
-                          {maxDensity === 1 ? 'country has' : 'countries have'} a holiday
+                          ~{density * 10}% of population on holiday
                         </div>
                       ) : (
                         <div className="mt-0.5 text-gray-400">No holidays</div>
                       )}
-                      {density !== null && density > 0 && countryNames.length > 1 && (
+                      {density !== null && density > 0 && !isSingleCountry && dateStr && (
                         <div className="mt-1 text-gray-300 text-[10px]">
                           {countryNames
-                            .filter((c) => {
-                              if (!dateStr) return false;
-                              const ch = getHolidaysForCountry(c.code);
-                              return ch?.periods.some(
-                                (p) => dateStr >= p.start && dateStr <= p.end
-                              );
-                            })
+                            .filter((c) => isCountryOnHoliday(c.code, dateStr))
                             .map((c) => `${c.flag} ${c.name}`)
                             .join(', ')}
+                        </div>
+                      )}
+                      {density !== null && density > 0 && isGermany && dateStr && (
+                        <div className="mt-1 text-gray-300 text-[10px]">
+                          {getGermanStatesOnHoliday(dateStr).join(', ')}
                         </div>
                       )}
                     </TooltipContent>
@@ -161,16 +150,15 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
 
           {/* Legend */}
           <div className="mt-4 flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-gray-500 font-medium">Density:</span>
-            {legendSteps.map((step) => (
+            <span className="text-xs text-gray-500 font-medium">Population on holiday:</span>
+            {Array.from({ length: DENSITY_MAX + 1 }, (_, i) => i).map((step) => (
               <div key={step} className="flex items-center gap-1">
                 <div
-                  className={`w-4 h-4 rounded-sm ${densityColor(step, maxDensity)}`}
+                  className={`w-4 h-4 rounded-sm ${densityColor(step)}`}
                 />
-                <span className="text-xs text-gray-500">{step}</span>
+                <span className="text-xs text-gray-500">{step * 10}%</span>
               </div>
             ))}
-            <span className="text-xs text-gray-400 ml-1">(countries on holiday)</span>
           </div>
         </div>
       </div>

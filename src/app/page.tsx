@@ -29,8 +29,10 @@ export default function Home() {
             <Badge variant="secondary" className="text-xs">2025–2030</Badge>
           </div>
           <p className="text-gray-500 text-sm max-w-2xl">
-            Visualize when public and school holidays overlap across Europe. Darker cells indicate
-            more countries are on holiday simultaneously — ideal for planning travel or remote work.
+            Visualize the share of the population on public or school holidays across Europe.
+            Darker cells indicate a higher percentage of the combined population is off simultaneously —
+            ideal for planning travel or remote work. Germany is modelled state-by-state to reflect
+            staggered school holiday schedules.
           </p>
         </div>
 
