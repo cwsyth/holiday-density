@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { COUNTRIES } from '@/lib/holidays';
 import DensityCalendar from '@/components/DensityCalendar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -70,22 +71,42 @@ export default function Home() {
                 <button
                   key={c.code}
                   onClick={() => setActiveTab(c.code)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1.5 ${
                     activeTab === c.code
                       ? 'bg-indigo-600 text-white shadow-sm'
                       : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
                   }`}
                 >
-                  {c.flag} {c.name}
+                  <Image
+                    src={`https://flagcdn.com/16x12/${c.code.toLowerCase()}.png`}
+                    alt={`${c.name} flag`}
+                    width={16}
+                    height={12}
+                    unoptimized
+                    className="rounded-sm shrink-0"
+                  />
+                  {c.name}
                 </button>
               ))}
             </div>
 
             <div className="mt-3">
-              <CardTitle className="text-lg">
-                {activeTab === 'all'
-                  ? `All 10 Countries — ${year}`
-                  : `${activeCountry?.flag} ${activeCountry?.name} — ${year}`}
+              <CardTitle className="text-lg flex items-center gap-2">
+                {activeTab === 'all' ? (
+                  `All 10 Countries — ${year}`
+                ) : (
+                  <>
+                    <Image
+                      src={`https://flagcdn.com/20x15/${activeTab.toLowerCase()}.png`}
+                      alt={`${activeCountry?.name} flag`}
+                      width={20}
+                      height={15}
+                      unoptimized
+                      className="rounded-sm shrink-0"
+                    />
+                    {activeCountry?.name} — {year}
+                  </>
+                )}
               </CardTitle>
               <CardDescription className="text-xs mt-0.5">
                 {activeTab === 'all'
