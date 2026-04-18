@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { getDensityMap, isCountryOnHoliday, getGermanStatesOnHoliday, COUNTRIES } from '@/lib/holidays';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -13,6 +13,9 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 
 /** Density scale is always 0–10 (representing 0 %–100 % of population). */
 const DENSITY_MAX = 10;
+
+/** Total number of German federal states tracked in the data. */
+const DE_STATE_COUNT = 16;
 
 function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
@@ -38,6 +41,14 @@ function densityColor(density: number): string {
 
 
 export default function DensityCalendar({ year, countryCodes }: Props) {
+  // Key to detect when the view changes (year or selected countries).
+  const viewKey = `${year}:${countryCodes.join(',')}`;
+
+  // Store the view context alongside the clicked date so the panel
+  // automatically clears when the user switches year/country.
+  const [clickedState, setClickedState] = useState<{ viewKey: string; dateStr: string } | null>(null);
+  const clickedCell = clickedState?.viewKey === viewKey ? clickedState.dateStr : null;
+
   const densityMap = React.useMemo(
     () => getDensityMap(year, countryCodes),
     [year, countryCodes]
@@ -50,6 +61,54 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
   const countryNames = React.useMemo(() => {
     return COUNTRIES.filter((c) => countryCodes.includes(c.code));
   }, [countryCodes]);
+
+  /** Shared tooltip/panel content for a given date. */
+  function renderCellInfo(dateStr: string, density: number, weekday: string, monthIdx: number, day: number) {
+    const onHolidayCountries =
+      density > 0 && !isSingleCountry
+        ? countryNames.filter((c) => isCountryOnHoliday(c.code, dateStr))
+        : [];
+    const statesOnHoliday =
+      density > 0 && isGermany ? getGermanStatesOnHoliday(dateStr) : [];
+
+    return (
+      <>
+        <div className="font-semibold">
+          {weekday}, {MONTHS[monthIdx]} {day}, {year}
+        </div>
+        {density > 0 ? (
+          <div className="mt-0.5 text-blue-300">~{density * 10}% of population on holiday</div>
+        ) : (
+          <div className="mt-0.5 text-gray-400">No holidays</div>
+        )}
+        {onHolidayCountries.length > 0 && (
+          <div className="mt-1 text-gray-300 text-[10px]">
+            {onHolidayCountries.length}/{countryNames.length} countries:{' '}
+            {onHolidayCountries.map((c) => c.name).join(', ')}
+          </div>
+        )}
+        {statesOnHoliday.length > 0 && (
+          <div className="mt-1 text-gray-300 text-[10px]">
+            {statesOnHoliday.length}/{DE_STATE_COUNT} states:{' '}
+            {statesOnHoliday.join(', ')}
+          </div>
+        )}
+      </>
+    );
+  }
+
+  // Compute info for the clicked cell (used by the info panel)
+  const clickedInfo = React.useMemo(() => {
+    if (!clickedCell) return null;
+    const [cy, cm, cd] = clickedCell.split('-').map(Number);
+    const date = new Date(cy, cm - 1, cd);
+    return {
+      density: densityMap.get(clickedCell) ?? 0,
+      weekday: date.toLocaleDateString('en-US', { weekday: 'short' }),
+      monthIdx: cm - 1,
+      day: cd,
+    };
+  }, [clickedCell, densityMap]);
 
   return (
     <TooltipProvider delayDuration={100}>
@@ -100,38 +159,30 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
                 const date = new Date(year, monthIdx, day);
                 const weekday = date.toLocaleDateString('en-US', { weekday: 'short' });
                 const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                const isClicked = clickedCell === dateStr;
 
                 return (
                   <Tooltip key={monthIdx}>
                     <TooltipTrigger asChild>
                       <div
-                        className={`flex-1 h-3 sm:h-4 m-px rounded-sm cursor-default transition-opacity hover:opacity-80 ${bg} ${isWeekend ? 'ring-1 ring-inset ring-black/10' : ''}`}
+                        className={`flex-1 h-3 sm:h-4 m-px rounded-sm cursor-pointer transition-opacity hover:opacity-80 ${bg} ${
+                          isClicked
+                            ? 'ring-2 ring-white'
+                            : isWeekend
+                            ? 'ring-1 ring-inset ring-black/10'
+                            : ''
+                        }`}
+                        onClick={() =>
+                          setClickedState(
+                            isClicked ? null : dateStr ? { viewKey, dateStr } : null,
+                          )
+                        }
                       />
                     </TooltipTrigger>
                     <TooltipContent side="top" className="text-xs">
-                      <div className="font-semibold">
-                        {weekday}, {MONTHS[monthIdx]} {day}, {year}
-                      </div>
-                      {density !== null && density > 0 ? (
-                        <div className="mt-0.5 text-blue-300">
-                          ~{density * 10}% of population on holiday
-                        </div>
-                      ) : (
-                        <div className="mt-0.5 text-gray-400">No holidays</div>
-                      )}
-                      {density !== null && density > 0 && !isSingleCountry && dateStr && (
-                        <div className="mt-1 text-gray-300 text-[10px]">
-                          {countryNames
-                            .filter((c) => isCountryOnHoliday(c.code, dateStr))
-                            .map((c) => `${c.flag} ${c.name}`)
-                            .join(', ')}
-                        </div>
-                      )}
-                      {density !== null && density > 0 && isGermany && dateStr && (
-                        <div className="mt-1 text-gray-300 text-[10px]">
-                          {getGermanStatesOnHoliday(dateStr).join(', ')}
-                        </div>
-                      )}
+                      {dateStr && density !== null
+                        ? renderCellInfo(dateStr, density, weekday, monthIdx, day)
+                        : null}
                     </TooltipContent>
                   </Tooltip>
                 );
@@ -162,6 +213,28 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
           </div>
         </div>
       </div>
+
+      {/* Clicked-cell info panel — visible on all screen sizes, useful on mobile where hover is unavailable */}
+      {clickedCell && clickedInfo && (
+        <div className="mt-3 p-3 bg-slate-900 rounded-lg text-white text-xs relative">
+          <button
+            onClick={() => setClickedState(null)}
+            className="absolute top-2 right-2 text-gray-400 hover:text-white leading-none"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+          <div className="pr-4">
+            {renderCellInfo(
+              clickedCell,
+              clickedInfo.density,
+              clickedInfo.weekday,
+              clickedInfo.monthIdx,
+              clickedInfo.day,
+            )}
+          </div>
+        </div>
+      )}
     </TooltipProvider>
   );
 }
