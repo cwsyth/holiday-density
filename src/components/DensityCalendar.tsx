@@ -173,9 +173,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
                             : ''
                         }`}
                         onClick={() =>
-                          setClickedState(
-                            isClicked ? null : dateStr ? { viewKey, dateStr } : null,
-                          )
+                          setClickedState(isClicked ? null : { viewKey, dateStr: dateStr! })
                         }
                       />
                     </TooltipTrigger>

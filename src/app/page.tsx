@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { COUNTRIES } from '@/lib/holidays';
 import DensityCalendar from '@/components/DensityCalendar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -76,12 +77,12 @@ export default function Home() {
                       : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
                   }`}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src={`https://flagcdn.com/16x12/${c.code.toLowerCase()}.png`}
                     alt={`${c.name} flag`}
                     width={16}
                     height={12}
+                    unoptimized
                     className="rounded-sm shrink-0"
                   />
                   {c.name}
@@ -95,12 +96,12 @@ export default function Home() {
                   `All 10 Countries — ${year}`
                 ) : (
                   <>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <Image
                       src={`https://flagcdn.com/20x15/${activeTab.toLowerCase()}.png`}
                       alt={`${activeCountry?.name} flag`}
                       width={20}
                       height={15}
+                      unoptimized
                       className="rounded-sm shrink-0"
                     />
                     {activeCountry?.name} — {year}
