@@ -69,7 +69,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
         ? countryNames.filter((c) => isCountryOnHoliday(c.code, dateStr))
         : [];
     const statesOnHoliday =
-      density > 0 && isGermany ? getGermanStatesOnHoliday(dateStr) : [];
+      isGermany ? getGermanStatesOnHoliday(dateStr) : [];
 
     return (
       <>
@@ -78,6 +78,11 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
         </div>
         {density > 0 ? (
           <div className="mt-0.5 text-blue-300">~{density * 10}% of population on holiday</div>
+        ) : statesOnHoliday.length > 0 ? (
+          <div className="mt-0.5 text-gray-300">
+            School break in {statesOnHoliday.length}/{DE_STATE_COUNT}{' '}
+            {statesOnHoliday.length === 1 ? 'state' : 'states'}
+          </div>
         ) : (
           <div className="mt-0.5 text-gray-400">No holidays</div>
         )}
