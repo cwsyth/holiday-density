@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { getDensityMap, isCountryOnHoliday, getGermanStatesOnHoliday, COUNTRIES } from '@/lib/holidays';
+import { getDensityMap, isCountryOnHoliday, getRegionsOnHoliday, getRegionCount, COUNTRIES } from '@/lib/holidays';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type Props = {
@@ -13,9 +13,6 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 
 /** Density scale is always 0–10 (representing 0 %–100 % of population). */
 const DENSITY_MAX = 10;
-
-/** Total number of German federal states tracked in the data. */
-const DE_STATE_COUNT = 16;
 
 function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
@@ -56,7 +53,8 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
 
   const isSingleCountry = countryCodes.length === 1;
   const singleCountryCode = isSingleCountry ? countryCodes[0] : null;
-  const isGermany = singleCountryCode === 'DE';
+  const regionCount = singleCountryCode ? getRegionCount(singleCountryCode) : 0;
+  const hasRegions = regionCount > 0;
 
   const countryNames = React.useMemo(() => {
     return COUNTRIES.filter((c) => countryCodes.includes(c.code));
@@ -68,8 +66,8 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
       density > 0 && !isSingleCountry
         ? countryNames.filter((c) => isCountryOnHoliday(c.code, dateStr))
         : [];
-    const statesOnHoliday =
-      isGermany ? getGermanStatesOnHoliday(dateStr) : [];
+    const regionsOnHoliday =
+      hasRegions && singleCountryCode ? getRegionsOnHoliday(singleCountryCode, dateStr) : [];
 
     return (
       <>
@@ -78,10 +76,10 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
         </div>
         {density > 0 ? (
           <div className="mt-0.5 text-blue-300">~{density * 10}% of population on holiday</div>
-        ) : statesOnHoliday.length > 0 ? (
+        ) : regionsOnHoliday.length > 0 ? (
           <div className="mt-0.5 text-gray-300">
-            School break in {statesOnHoliday.length}/{DE_STATE_COUNT}{' '}
-            {statesOnHoliday.length === 1 ? 'state' : 'states'}
+            School break in {regionsOnHoliday.length}/{regionCount}{' '}
+            {regionsOnHoliday.length === 1 ? 'region' : 'regions'}
           </div>
         ) : (
           <div className="mt-0.5 text-gray-400">No holidays</div>
@@ -92,10 +90,10 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
             {onHolidayCountries.map((c) => c.name).join(', ')}
           </div>
         )}
-        {statesOnHoliday.length > 0 && (
+        {regionsOnHoliday.length > 0 && (
           <div className="mt-1 text-gray-300 text-[10px]">
-            {statesOnHoliday.length}/{DE_STATE_COUNT} states:{' '}
-            {statesOnHoliday.join(', ')}
+            {regionsOnHoliday.length}/{regionCount} regions:{' '}
+            {regionsOnHoliday.join(', ')}
           </div>
         )}
       </>
