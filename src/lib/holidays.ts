@@ -320,6 +320,8 @@ function buildGermanyRegions(): RegionHolidays[] {
  * Semesterferien (semester break) per Austrian state group.
  * Austria divides its states into three groups, each receiving one week off in
  * consecutive weeks in February.  The rotation shifts slightly each year.
+ * Dates are approximate; near-term years are based on official announcements,
+ * later years are pattern-based estimates derived from calendar alignment.
  * Index order: [2025, 2026, 2027, 2028, 2029, 2030]
  */
 const AT_SEMESTER: Record<string, BreakTuple[]> = {
@@ -328,6 +330,7 @@ const AT_SEMESTER: Record<string, BreakTuple[]> = {
   // West: Oberösterreich, Salzburg (~2.1 M)
   WEST:  [[2,17,2,23],[2,16,2,22],[2,15,2,21],[2,21,2,27],[2,18,2,24],[2,18,2,24]],
   // South/West: Kärnten, Steiermark, Tirol, Vorarlberg (~3.0 M)
+  // 2029 and 2030 are calendar-derived estimates; confirm against BMBWF announcements.
   SOUTH: [[2,24,3, 2],[2,23,3, 1],[2,22,2,28],[2,28,3, 5],[2,25,3, 3],[2,25,3, 3]],
 };
 
@@ -391,10 +394,13 @@ function buildAustriaPeriods(): HolidayPeriod[] {
 /**
  * Summer holiday dates per Swiss linguistic region.
  * German-speaking cantons get ~6 weeks; Romandy ~9 weeks; Ticino ~11 weeks.
+ * Near-term dates are based on canton-published schedules; dates for 2029–2030
+ * are pattern-based estimates and should be updated when official dates are published.
  * Index order: [2025, 2026, 2027, 2028, 2029, 2030]
  */
 const CH_SUMMER: Record<string, BreakTuple[]> = {
   // German-speaking cantons (~6.1 M): ~6 weeks, early July – mid-August
+  // 2029 and 2030 carry forward the 2025 pattern as a calendar estimate.
   DE: [[7, 7,8,17],[7, 6,8,16],[7, 5,8,15],[7, 7,8,18],[7, 7,8,17],[7, 7,8,17]],
   // Romandy / French-speaking (~2.2 M): ~9 weeks, late June – end of August
   FR: [[6,30,8,31],[6,29,8,30],[6,28,8,29],[7, 1,9, 1],[6,30,8,31],[6,30,8,31]],
@@ -658,11 +664,14 @@ function buildNorwayPeriods(): HolidayPeriod[] {
 /**
  * Ferie zimowe (winter break) per Polish voivodeship group.
  * Each group receives 2 weeks (14 days) at staggered 1-week intervals in Jan–Feb.
- * The Ministry of Education sets exact dates annually; these are close approximations.
+ * The Ministry of Education (MEN) publishes exact dates annually; the values here
+ * are approximate — 2025 is confirmed, later years are calendar-derived estimates.
+ * Update each year once MEN publishes the official schedule.
  * Index order: [2025, 2026, 2027, 2028, 2029, 2030]
  */
 const PL_WINTER: Record<string, BreakTuple[]> = {
   // Group 1: Dolnośląskie, Opolskie (~3.8 M) — earliest break
+  // 2025 confirmed; 2029 and 2030 are estimates matching the 2025 calendar pattern.
   G1: [[1,20,2, 2],[1,19,2, 1],[1,18,1,31],[1,22,2, 4],[1,20,2, 2],[1,20,2, 2]],
   // Group 2: Kujawsko-Pom, Lubuskie, Warmińsko-Maz, Zachodniopom, Wielkopolskie (~9.6 M)
   G2: [[1,27,2, 9],[1,26,2, 8],[1,25,2, 7],[1,29,2,11],[1,27,2, 9],[1,27,2, 9]],
