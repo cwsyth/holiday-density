@@ -1055,6 +1055,17 @@ export function getQuietestWindows(
   year: number,
   windowDays: number,
 ): Array<{ start: string; end: string; avgDensity: number }> {
+  // UI only exposes trip lengths from 3 to 30 days.
+  const MIN_WINDOW_DAYS = 3;
+  const MAX_WINDOW_DAYS = 30;
+  // Average-density tolerance scaling: 0.2 (~2%) for short trips up to +0.8 (~8%) for long trips.
+  const MIN_AVG_SLACK = 0.2;
+  const AVG_SLACK_RANGE = 0.8;
+  // Peak-day cap scaling: starts at density 2 (~20%), scales up by 3 steps, and never exceeds density 5 (~50%).
+  const MIN_PEAK_DENSITY = 2;
+  const PEAK_DENSITY_STEPS = 3;
+  const MAX_PEAK_DENSITY = 5;
+
   // Build ordered list of all dates in the year
   const allDates: string[] = [];
   for (let m = 1; m <= 12; m++) {
@@ -1093,15 +1104,19 @@ export function getQuietestWindows(
 
   // Allow a larger average-density tolerance for longer trips:
   // 3-day windows tolerate ~2% extra, 30-day windows tolerate ~10% extra.
-  const minWindow = 3;
-  const maxWindow = 30;
-  const normalized = Math.min(1, Math.max(0, (windowDays - minWindow) / (maxWindow - minWindow)));
-  const avgSlack = 0.2 + normalized * 0.8;
+  const normalized = Math.min(
+    1,
+    Math.max(0, (windowDays - MIN_WINDOW_DAYS) / (MAX_WINDOW_DAYS - MIN_WINDOW_DAYS)),
+  );
+  const avgSlack = MIN_AVG_SLACK + normalized * AVG_SLACK_RANGE;
   const maxAllowedAvg = minAvg + avgSlack;
 
   // Also cap single-day spikes to keep highlighted windows intuitively quiet.
   // 3-day windows allow up to ~20% (density=2), 30-day windows up to ~50% (density=5).
-  const maxAllowedPeak = Math.min(5, 2 + Math.floor(normalized * 3));
+  const maxAllowedPeak = Math.min(
+    MAX_PEAK_DENSITY,
+    MIN_PEAK_DENSITY + Math.floor(normalized * PEAK_DENSITY_STEPS),
+  );
 
   const thresholdMatches = candidates.filter(
     (w) => w.avgDensity <= maxAllowedAvg && w.peakDensity <= maxAllowedPeak,
