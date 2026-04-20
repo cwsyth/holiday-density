@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { getDensityMap, isCountryOnHoliday, getRegionsOnHoliday, getRegionCount, COUNTRIES } from '@/lib/holidays';
+import { getDensityMap, isCountryOnHoliday, getRegionsOnHoliday, getRegionCount, getHolidayNamesForDate, COUNTRIES } from '@/lib/holidays';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type Props = {
@@ -68,6 +68,10 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
         : [];
     const regionsOnHoliday =
       hasRegions && singleCountryCode ? getRegionsOnHoliday(singleCountryCode, dateStr) : [];
+    const holidayNames =
+      isSingleCountry && singleCountryCode && density > 0
+        ? getHolidayNamesForDate(singleCountryCode, dateStr)
+        : [];
 
     return (
       <>
@@ -83,6 +87,11 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
           </div>
         ) : (
           <div className="mt-0.5 text-gray-400">No holidays</div>
+        )}
+        {holidayNames.length > 0 && (
+          <div className="mt-1 text-gray-300 text-[10px]">
+            {holidayNames.join(' · ')}
+          </div>
         )}
         {onHolidayCountries.length > 0 && (
           <div className="mt-1 text-gray-300 text-[10px]">
