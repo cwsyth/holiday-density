@@ -11,10 +11,17 @@ import { Button } from '@/components/ui/button';
 const YEARS = [2025, 2026, 2027, 2028, 2029, 2030];
 const ALL_CODES = COUNTRIES.map((c) => c.code);
 
+function defaultYear(): number {
+  const current = new Date().getFullYear();
+  if (YEARS.includes(current)) return current;
+  // Clamp to the nearest available year
+  return current < YEARS[0] ? YEARS[0] : YEARS[YEARS.length - 1];
+}
+
 type Tab = 'all' | string;
 
 export default function Home() {
-  const [year, setYear] = useState(2025);
+  const [year, setYear] = useState(defaultYear());
   const [activeTab, setActiveTab] = useState<Tab>('all');
 
   const countryCodes = activeTab === 'all' ? ALL_CODES : [activeTab];

@@ -901,6 +901,31 @@ export function getDensityForDate(dateStr: string, countryCodes: string[]): numb
   return Math.round((popOnHoliday / totalPop) * 10);
 }
 
+/**
+ * Returns the names of holidays (public or school) active on the given date for a single country.
+ * National periods are checked first; then regional periods are collected and deduplicated.
+ */
+export function getHolidayNamesForDate(countryCode: string, dateStr: string): string[] {
+  const country = getHolidaysForCountry(countryCode);
+  if (!country) return [];
+
+  const names = new Set<string>();
+
+  // National periods
+  for (const p of country.periods) {
+    if (isDateInPeriod(dateStr, p)) names.add(p.name);
+  }
+
+  // Regional periods
+  for (const region of country.regions ?? []) {
+    for (const p of region.periods) {
+      if (isDateInPeriod(dateStr, p)) names.add(p.name);
+    }
+  }
+
+  return Array.from(names);
+}
+
 export function getDensityMap(year: number, countryCodes: string[]): Map<string, number> {
   const map = new Map<string, number>();
   const start = new Date(year, 0, 1);
