@@ -574,7 +574,6 @@ function buildDenmarkPeriods(): HolidayPeriod[] {
     periods.push(single(addDays(easter, -3), 'Maundy Thursday', 'public'));
     periods.push(single(addDays(easter, -2), 'Good Friday', 'public'));
     periods.push(single(addDays(easter, 1), 'Easter Monday', 'public'));
-    periods.push(single(addDays(easter, 26), 'Store Bededag', 'public'));
     periods.push(single(addDays(easter, 39), 'Ascension Day', 'public'));
     periods.push(single(addDays(easter, 50), 'Whit Monday', 'public'));
     periods.push(single(dateOf(year, 6, 5), 'Constitution Day', 'public'));
@@ -778,31 +777,31 @@ function buildCzechPeriods(): HolidayPeriod[] {
 
 export const HOLIDAY_DATA: CountryHolidays[] = [
   {
-    code: 'DE', name: 'Germany', population: 84_600,
+    code: 'DE', name: 'Germany', population: 84_358,
     regions: buildGermanyRegions(),
     periods: buildGermanyNationalPeriods(),
   },
   {
-    code: 'AT', name: 'Austria', population: 9_100,
+    code: 'AT', name: 'Austria', population: 9_159,
     regions: buildAustriaRegions(),
     periods: buildAustriaPeriods(),
   },
   {
-    code: 'CH', name: 'Switzerland', population: 8_700,
+    code: 'CH', name: 'Switzerland', population: 8_963,
     regions: buildSwitzerlandRegions(),
     periods: buildSwitzerlandPeriods(),
   },
-  { code: 'ES', name: 'Spain',          population: 47_500, periods: buildSpainPeriods() },
-  { code: 'BE', name: 'Belgium',        population: 11_600, periods: buildBelgiumPeriods() },
-  { code: 'DK', name: 'Denmark',        population:  5_900, periods: buildDenmarkPeriods() },
-  { code: 'IT', name: 'Italy',          population: 59_000, periods: buildItalyPeriods() },
-  { code: 'NO', name: 'Norway',         population:  5_500, periods: buildNorwayPeriods() },
+  { code: 'ES', name: 'Spain',          population: 49_077, periods: buildSpainPeriods() },
+  { code: 'BE', name: 'Belgium',        population: 11_825, periods: buildBelgiumPeriods() },
+  { code: 'DK', name: 'Denmark',        population:  5_980, periods: buildDenmarkPeriods() },
+  { code: 'IT', name: 'Italy',          population: 58_934, periods: buildItalyPeriods() },
+  { code: 'NO', name: 'Norway',         population:  5_576, periods: buildNorwayPeriods() },
   {
-    code: 'PL', name: 'Poland', population: 37_000,
+    code: 'PL', name: 'Poland', population: 36_497,
     regions: buildPolandRegions(),
     periods: buildPolandPeriods(),
   },
-  { code: 'CZ', name: 'Czech Republic', population: 10_900, periods: buildCzechPeriods() },
+  { code: 'CZ', name: 'Czech Republic', population: 10_909, periods: buildCzechPeriods() },
 ];
 
 export const COUNTRIES = [
@@ -940,15 +939,16 @@ export function getDensityMap(year: number, countryCodes: string[]): Map<string,
 }
 
 /**
- * Returns the top `topN` non-overlapping windows of `windowDays` consecutive days
- * with the lowest average density, sorted chronologically.
+ * Returns all windows of `windowDays` consecutive days that tie for the
+ * lowest average density, sorted chronologically.
  */
 export function getQuietestWindows(
   densityMap: Map<string, number>,
   year: number,
   windowDays: number,
-  topN: number,
 ): Array<{ start: string; end: string; avgDensity: number }> {
+  if (windowDays <= 0) return [];
+
   // Build ordered list of all dates in the year
   const allDates: string[] = [];
   for (let m = 1; m <= 12; m++) {
@@ -977,13 +977,11 @@ export function getQuietestWindows(
   // Sort by average density ascending (quietest first)
   candidates.sort((a, b) => a.avgDensity - b.avgDensity);
 
-  // Pick top N non-overlapping windows
-  const result: Array<{ start: string; end: string; avgDensity: number }> = [];
-  for (const w of candidates) {
-    if (result.length >= topN) break;
-    const overlaps = result.some((r) => !(w.end < r.start || w.start > r.end));
-    if (!overlaps) result.push(w);
-  }
+  if (candidates.length === 0) return [];
+
+  const minAvg = candidates[0].avgDensity;
+  const EPSILON = 1e-9;
+  const result = candidates.filter((w) => Math.abs(w.avgDensity - minAvg) <= EPSILON);
 
   // Return in chronological order
   result.sort((a, b) => (a.start < b.start ? -1 : 1));
