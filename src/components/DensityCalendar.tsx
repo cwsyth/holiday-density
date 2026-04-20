@@ -464,7 +464,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
       {showBestTime && quietestBlocks.length > 0 && (
         <div className="mt-3 p-3 bg-slate-800 rounded-lg text-white text-xs">
           <div className="font-semibold text-emerald-400 mb-2">
-            🌿 {quietestBlocks.length} quiet period cluster{quietestBlocks.length !== 1 ? 's' : ''} for {windowDays}-day trips in {year}
+            🌿 {quietestBlocks.length} quietest period{quietestBlocks.length !== 1 ? 's' : ''} for {windowDays}-day trips in {year}
           </div>
           <div className="space-y-1.5">
             {quietestBlocks.map((w, i) => (
@@ -481,7 +481,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
             ))}
           </div>
           <div className="mt-2 text-gray-500 text-[10px]">
-            Consecutive tied quiet windows are merged; green-ringed cells show these blocks on the calendar above.
+            Similar quiet windows are grouped together for easier planning; green-ringed cells show these periods on the calendar above.
           </div>
         </div>
       )}
