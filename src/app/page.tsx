@@ -28,15 +28,15 @@ export default function Home() {
   const activeCountry = COUNTRIES.find((c) => c.code === activeTab);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-slate-900">
       <div className="max-w-[1400px] mx-auto px-3 sm:px-4 py-4 sm:py-8">
         {/* Header */}
         <div className="mb-4 sm:mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Holiday Density</h1>
-            <Badge variant="secondary" className="text-xs">2025–2030</Badge>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-100">Holiday Density</h1>
+            <Badge variant="secondary" className="text-xs bg-white text-slate-900 border-white">2025–2030</Badge>
           </div>
-          <p className="text-gray-500 text-sm max-w-2xl">
+          <p className="text-slate-300 text-sm max-w-2xl">
             Visualize the share of the population on public or school holidays across Europe.
             Darker cells indicate a higher percentage of the combined population is off simultaneously —
             ideal for planning travel or remote work. Germany, Austria, Poland, Switzerland, and France are
@@ -44,11 +44,11 @@ export default function Home() {
           </p>
         </div>
 
-        <Card className="shadow-sm">
+        <Card className="shadow-sm bg-slate-800 border-slate-700 text-slate-100">
           <CardHeader className="pb-4 px-3 sm:px-6">
             {/* Year selector */}
             <div className="flex items-center gap-2 flex-wrap mb-4">
-              <span className="text-sm font-medium text-gray-600 mr-1">Year:</span>
+              <span className="text-sm font-medium text-slate-300 mr-1">Year:</span>
               {YEARS.map((y) => (
                 <Button
                   key={y}
@@ -69,7 +69,7 @@ export default function Home() {
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                   activeTab === 'all'
                     ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                     : 'bg-slate-700 border border-slate-600 text-slate-200 hover:bg-slate-600'
                 }`}
               >
                 🌍 All Countries
@@ -81,7 +81,7 @@ export default function Home() {
                   className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1.5 ${
                     activeTab === c.code
                       ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                       : 'bg-slate-700 border border-slate-600 text-slate-200 hover:bg-slate-600'
                   }`}
                 >
                   <Image
@@ -128,7 +128,7 @@ export default function Home() {
           </CardContent>
         </Card>
 
-        <footer className="mt-8 text-center text-xs text-gray-400">
+         <footer className="mt-8 text-center text-xs text-slate-400">
           Holiday data is approximate. Public holidays and school holiday periods vary by region.
         </footer>
       </div>
