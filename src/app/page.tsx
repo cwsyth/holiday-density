@@ -32,8 +32,8 @@ export default function Home() {
           <p className="text-gray-500 text-sm max-w-2xl">
             Visualize the share of the population on public or school holidays across Europe.
             Darker cells indicate a higher percentage of the combined population is off simultaneously —
-            ideal for planning travel or remote work. Germany is modelled state-by-state to reflect
-            staggered school holiday schedules.
+            ideal for planning travel or remote work. Germany, Austria, Poland, and Switzerland are
+            modelled by region to reflect staggered school holiday schedules.
           </p>
         </div>
 

@@ -316,6 +316,45 @@ function buildGermanyRegions(): RegionHolidays[] {
   });
 }
 
+/**
+ * Semesterferien (semester break) per Austrian state group.
+ * Austria divides its states into three groups, each receiving one week off in
+ * consecutive weeks in February.  The rotation shifts slightly each year.
+ * Dates are approximate; near-term years are based on official announcements,
+ * later years are pattern-based estimates derived from calendar alignment.
+ * Index order: [2025, 2026, 2027, 2028, 2029, 2030]
+ */
+const AT_SEMESTER: Record<string, BreakTuple[]> = {
+  // East: Wien, Niederösterreich, Burgenland (~3.9 M)
+  EAST:  [[2,10,2,16],[2, 9,2,15],[2, 8,2,14],[2,14,2,20],[2,11,2,17],[2,11,2,17]],
+  // West: Oberösterreich, Salzburg (~2.1 M)
+  WEST:  [[2,17,2,23],[2,16,2,22],[2,15,2,21],[2,21,2,27],[2,18,2,24],[2,18,2,24]],
+  // South/West: Kärnten, Steiermark, Tirol, Vorarlberg (~3.0 M)
+  // 2029 and 2030 are calendar-derived estimates; confirm against BMBWF announcements.
+  SOUTH: [[2,24,3, 2],[2,23,3, 1],[2,22,2,28],[2,28,3, 5],[2,25,3, 3],[2,25,3, 3]],
+};
+
+function buildAustriaRegions(): RegionHolidays[] {
+  const groups: { code: string; name: string; population: number; semKey: string }[] = [
+    { code: 'AT-EAST',  name: 'Vienna & East',              population: 3_905, semKey: 'EAST'  },
+    { code: 'AT-WEST',  name: 'Upper Austria & Salzburg',   population: 2_058, semKey: 'WEST'  },
+    { code: 'AT-SOUTH', name: 'Carinthia, Styria & West',   population: 2_975, semKey: 'SOUTH' },
+  ];
+
+  return groups.map(({ code, name, population, semKey }) => {
+    const periods: HolidayPeriod[] = [];
+    for (const year of [2025, 2026, 2027, 2028, 2029, 2030]) {
+      const idx = year - HOLIDAY_DATA_START_YEAR;
+      const semDates = AT_SEMESTER[semKey]?.[idx];
+      if (semDates) {
+        const [sm, sd, em, ed] = semDates;
+        periods.push(period(dateOf(year, sm, sd), dateOf(year, em, ed), 'Semester Break', 'school'));
+      }
+    }
+    return { code, name, population, periods };
+  });
+}
+
 function buildAustriaPeriods(): HolidayPeriod[] {
   const periods: HolidayPeriod[] = [];
 
@@ -337,8 +376,7 @@ function buildAustriaPeriods(): HolidayPeriod[] {
     periods.push(single(dateOf(year, 12, 25), 'Christmas Day', 'public'));
     periods.push(single(dateOf(year, 12, 26), 'St. Stephen\'s Day', 'public'));
 
-    // School holidays
-    periods.push(period(dateOf(year, 2, 10), dateOf(year, 2, 15), 'Semester Break', 'school'));
+    // Nationwide school holidays (semester break is handled per state group in regions)
     const easterSch = addDays(easter, -8);
     periods.push(period(easterSch, addDays(easter, 6), 'Easter Holidays', 'school'));
     periods.push(period(addDays(easter, 50), addDays(easter, 51), 'Whitsun Break', 'school'));
@@ -351,6 +389,86 @@ function buildAustriaPeriods(): HolidayPeriod[] {
   }
 
   return periods;
+}
+
+/**
+ * Summer holiday dates per Swiss linguistic region.
+ * German-speaking cantons get ~6 weeks; Romandy ~9 weeks; Ticino ~11 weeks.
+ * Near-term dates are based on canton-published schedules; dates for 2029–2030
+ * are pattern-based estimates and should be updated when official dates are published.
+ * Index order: [2025, 2026, 2027, 2028, 2029, 2030]
+ */
+const CH_SUMMER: Record<string, BreakTuple[]> = {
+  // German-speaking cantons (~6.1 M): ~6 weeks, early July – mid-August
+  // 2029 and 2030 carry forward the 2025 pattern as a calendar estimate.
+  DE: [[7, 7,8,17],[7, 6,8,16],[7, 5,8,15],[7, 7,8,18],[7, 7,8,17],[7, 7,8,17]],
+  // Romandy / French-speaking (~2.2 M): ~9 weeks, late June – end of August
+  FR: [[6,30,8,31],[6,29,8,30],[6,28,8,29],[7, 1,9, 1],[6,30,8,31],[6,30,8,31]],
+  // Ticino / Italian-speaking (~0.36 M): ~11 weeks, late June – early September
+  IT: [[6,23,9, 7],[6,22,9, 6],[6,21,9, 5],[6,23,9, 7],[6,23,9, 7],[6,23,9, 7]],
+};
+
+/**
+ * Autumn break per Swiss linguistic region.
+ * German cantons & Ticino: 2 weeks; Romandy: 1 week.
+ */
+const CH_AUTUMN: Record<string, BreakTuple[]> = {
+  DE: [[10, 6,10,19],[10, 5,10,18],[10, 4,10,17],[10, 7,10,20],[10, 6,10,19],[10, 6,10,19]],
+  FR: [[10,13,10,19],[10,12,10,18],[10,11,10,17],[10,14,10,20],[10,13,10,19],[10,13,10,19]],
+  IT: [[10, 6,10,19],[10, 5,10,18],[10, 4,10,17],[10, 7,10,20],[10, 6,10,19],[10, 6,10,19]],
+};
+
+/**
+ * Carnival / Sportferien per Swiss linguistic region.
+ * German cantons (Sportferien): 1 week ~mid-February.
+ * Romandy (Carnaval): 2 weeks ~late February / early March.
+ * Ticino (Carnevale): 1 week ~early March.
+ */
+const CH_CARNIVAL: Record<string, BreakTuple[]> = {
+  DE: [[2,17,2,23],[2,16,2,22],[2,15,2,21],[2,19,2,25],[2,17,2,23],[2,17,2,23]],
+  FR: [[2,24,3, 9],[2,23,3, 8],[2,22,3, 7],[2,26,3,10],[2,24,3, 9],[2,24,3, 9]],
+  IT: [[3, 3,3, 9],[3, 2,3, 8],[3, 1,3, 7],[3, 4,3,10],[3, 3,3, 9],[3, 3,3, 9]],
+};
+
+function buildSwitzerlandRegions(): RegionHolidays[] {
+  const groups: { code: string; name: string; population: number; langKey: string; easterDays: [number, number] }[] = [
+    { code: 'CH-DE', name: 'German-speaking cantons',      population: 6_100, langKey: 'DE', easterDays: [-3, 5] },
+    { code: 'CH-FR', name: 'French-speaking (Romandy)',    population: 2_200, langKey: 'FR', easterDays: [-6, 7] },
+    { code: 'CH-IT', name: 'Italian-speaking (Ticino)',    population:   360, langKey: 'IT', easterDays: [-6, 7] },
+  ];
+
+  return groups.map(({ code, name, population, langKey, easterDays }) => {
+    const periods: HolidayPeriod[] = [];
+    for (const year of [2025, 2026, 2027, 2028, 2029, 2030]) {
+      const idx = year - HOLIDAY_DATA_START_YEAR;
+      const easter = easterDate(year);
+
+      // Carnival / Sportferien
+      const carnivalDates = CH_CARNIVAL[langKey]?.[idx];
+      if (carnivalDates) {
+        const [sm, sd, em, ed] = carnivalDates;
+        periods.push(period(dateOf(year, sm, sd), dateOf(year, em, ed), 'Carnival / Sportferien', 'school'));
+      }
+
+      // Easter break (length differs by region)
+      periods.push(period(addDays(easter, easterDays[0]), addDays(easter, easterDays[1]), 'Easter Holidays', 'school'));
+
+      // Summer break (strongly differs by region)
+      const summerDates = CH_SUMMER[langKey]?.[idx];
+      if (summerDates) {
+        const [sm, sd, em, ed] = summerDates;
+        periods.push(period(dateOf(year, sm, sd), dateOf(year, em, ed), 'Summer Holidays', 'school'));
+      }
+
+      // Autumn break
+      const autumnDates = CH_AUTUMN[langKey]?.[idx];
+      if (autumnDates) {
+        const [sm, sd, em, ed] = autumnDates;
+        periods.push(period(dateOf(year, sm, sd), dateOf(year, em, ed), 'Autumn Holidays', 'school'));
+      }
+    }
+    return { code, name, population, periods };
+  });
 }
 
 function buildSwitzerlandPeriods(): HolidayPeriod[] {
@@ -369,15 +487,13 @@ function buildSwitzerlandPeriods(): HolidayPeriod[] {
     periods.push(single(dateOf(year, 12, 25), 'Christmas Day', 'public'));
     periods.push(single(dateOf(year, 12, 26), 'Boxing Day', 'public'));
 
-    // School holidays (approximate, varies by canton)
-    periods.push(period(dateOf(year, 2, 17), dateOf(year, 2, 21), 'Carnival Break', 'school'));
-    periods.push(period(addDays(easter, -6), addDays(easter, 6), 'Easter Holidays', 'school'));
-    periods.push(period(dateOf(year, 6, 30), dateOf(year, 8, 17), 'Summer Holidays', 'school'));
-    periods.push(period(dateOf(year, 10, 6), dateOf(year, 10, 19), 'Autumn Holidays', 'school'));
+    // Christmas school break is uniform across all cantons
     periods.push(period(dateOf(year, 12, 22), dateOf(year, 12, 31), 'Christmas Holidays', 'school'));
     if (year < 2030) {
       periods.push(period(dateOf(year + 1, 1, 1), dateOf(year + 1, 1, 4), 'Christmas Holidays', 'school'));
     }
+    // All other school holidays (carnival, Easter, summer, autumn) vary by canton
+    // and are modelled per linguistic region in buildSwitzerlandRegions().
   }
 
   return periods;
@@ -545,6 +661,48 @@ function buildNorwayPeriods(): HolidayPeriod[] {
   return periods;
 }
 
+/**
+ * Ferie zimowe (winter break) per Polish voivodeship group.
+ * Each group receives 2 weeks (14 days) at staggered 1-week intervals in Jan–Feb.
+ * The Ministry of Education (MEN) publishes exact dates annually; the values here
+ * are approximate — 2025 is confirmed, later years are calendar-derived estimates.
+ * Update each year once MEN publishes the official schedule.
+ * Index order: [2025, 2026, 2027, 2028, 2029, 2030]
+ */
+const PL_WINTER: Record<string, BreakTuple[]> = {
+  // Group 1: Dolnośląskie, Opolskie (~3.8 M) — earliest break
+  // 2025 confirmed; 2029 and 2030 are estimates matching the 2025 calendar pattern.
+  G1: [[1,20,2, 2],[1,19,2, 1],[1,18,1,31],[1,22,2, 4],[1,20,2, 2],[1,20,2, 2]],
+  // Group 2: Kujawsko-Pom, Lubuskie, Warmińsko-Maz, Zachodniopom, Wielkopolskie (~9.6 M)
+  G2: [[1,27,2, 9],[1,26,2, 8],[1,25,2, 7],[1,29,2,11],[1,27,2, 9],[1,27,2, 9]],
+  // Group 3: Łódzkie, Małopolskie, Podkarpackie, Śląskie, Świętokrzyskie (~13.2 M)
+  G3: [[2, 3,2,16],[2, 2,2,15],[2, 1,2,14],[2, 5,2,18],[2, 3,2,16],[2, 3,2,16]],
+  // Group 4: Lubelskie, Mazowieckie, Podlaskie, Pomorskie (~10.4 M) — latest break
+  G4: [[2,10,2,23],[2, 9,2,22],[2, 8,2,21],[2,12,2,25],[2,10,2,23],[2,10,2,23]],
+};
+
+function buildPolandRegions(): RegionHolidays[] {
+  const groups: { code: string; name: string; population: number; winterKey: string }[] = [
+    { code: 'PL-G1', name: 'Lower Silesia & Opole',       population:  3_800, winterKey: 'G1' },
+    { code: 'PL-G2', name: 'Western & Northern regions',  population:  9_600, winterKey: 'G2' },
+    { code: 'PL-G3', name: 'Southern regions',            population: 13_200, winterKey: 'G3' },
+    { code: 'PL-G4', name: 'Eastern & Pomeranian regions',population: 10_400, winterKey: 'G4' },
+  ];
+
+  return groups.map(({ code, name, population, winterKey }) => {
+    const periods: HolidayPeriod[] = [];
+    for (const year of [2025, 2026, 2027, 2028, 2029, 2030]) {
+      const idx = year - HOLIDAY_DATA_START_YEAR;
+      const winterDates = PL_WINTER[winterKey]?.[idx];
+      if (winterDates) {
+        const [sm, sd, em, ed] = winterDates;
+        periods.push(period(dateOf(year, sm, sd), dateOf(year, em, ed), 'Winter Holidays', 'school'));
+      }
+    }
+    return { code, name, population, periods };
+  });
+}
+
 function buildPolandPeriods(): HolidayPeriod[] {
   const periods: HolidayPeriod[] = [];
 
@@ -564,9 +722,7 @@ function buildPolandPeriods(): HolidayPeriod[] {
     periods.push(single(dateOf(year, 12, 25), 'Christmas Day', 'public'));
     periods.push(single(dateOf(year, 12, 26), 'Boxing Day', 'public'));
 
-    // School holidays
-    // Winter (two separate regional groups, approximate combined)
-    periods.push(period(dateOf(year, 1, 27), dateOf(year, 2, 9), 'Winter Holidays', 'school'));
+    // Nationwide school holidays (winter break is handled per voivodeship group in regions)
     // Easter
     periods.push(period(addDays(easter, -4), addDays(easter, 2), 'Easter Break', 'school'));
     // Summer
@@ -626,14 +782,26 @@ export const HOLIDAY_DATA: CountryHolidays[] = [
     regions: buildGermanyRegions(),
     periods: buildGermanyNationalPeriods(),
   },
-  { code: 'AT', name: 'Austria',        population:  9_100, periods: buildAustriaPeriods() },
-  { code: 'CH', name: 'Switzerland',    population:  8_700, periods: buildSwitzerlandPeriods() },
+  {
+    code: 'AT', name: 'Austria', population: 9_100,
+    regions: buildAustriaRegions(),
+    periods: buildAustriaPeriods(),
+  },
+  {
+    code: 'CH', name: 'Switzerland', population: 8_700,
+    regions: buildSwitzerlandRegions(),
+    periods: buildSwitzerlandPeriods(),
+  },
   { code: 'ES', name: 'Spain',          population: 47_500, periods: buildSpainPeriods() },
   { code: 'BE', name: 'Belgium',        population: 11_600, periods: buildBelgiumPeriods() },
   { code: 'DK', name: 'Denmark',        population:  5_900, periods: buildDenmarkPeriods() },
   { code: 'IT', name: 'Italy',          population: 59_000, periods: buildItalyPeriods() },
   { code: 'NO', name: 'Norway',         population:  5_500, periods: buildNorwayPeriods() },
-  { code: 'PL', name: 'Poland',         population: 37_000, periods: buildPolandPeriods() },
+  {
+    code: 'PL', name: 'Poland', population: 37_000,
+    regions: buildPolandRegions(),
+    periods: buildPolandPeriods(),
+  },
   { code: 'CZ', name: 'Czech Republic', population: 10_900, periods: buildCzechPeriods() },
 ];
 
@@ -693,19 +861,24 @@ export function isCountryOnHoliday(countryCode: string, dateStr: string): boolea
 }
 
 /**
- * Returns the names of German states (regions) that have a holiday on the given date,
- * taking national periods into account.
+ * Returns the names of regions within a country that have a holiday on the given date,
+ * taking national periods into account. Works for any country that has regions defined.
  */
-export function getGermanStatesOnHoliday(dateStr: string): string[] {
-  const germany = getHolidaysForCountry('DE');
-  if (!germany) return [];
-  // National holiday → all states
-  if (germany.periods.some((p) => isDateInPeriod(dateStr, p))) {
-    return (germany.regions ?? []).map((r) => r.name);
+export function getRegionsOnHoliday(countryCode: string, dateStr: string): string[] {
+  const country = getHolidaysForCountry(countryCode);
+  if (!country || !country.regions) return [];
+  // National holiday → all regions are off
+  if (country.periods.some((p) => isDateInPeriod(dateStr, p))) {
+    return country.regions.map((r) => r.name);
   }
-  return (germany.regions ?? [])
+  return country.regions
     .filter((r) => r.periods.some((p) => isDateInPeriod(dateStr, p)))
     .map((r) => r.name);
+}
+
+/** Returns the number of regions defined for a country (0 if none). */
+export function getRegionCount(countryCode: string): number {
+  return getHolidaysForCountry(countryCode)?.regions?.length ?? 0;
 }
 
 /**
