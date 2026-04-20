@@ -372,7 +372,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
 
           {/* Single-day info panel */}
           {effectiveSelection.phase === 'single' && singleInfo && (
-            <div className="mt-3 p-3 bg-slate-800 rounded-lg text-white text-xs relative">
+            <div className="mt-3 p-3 bg-zinc-800 rounded-lg text-white text-xs relative">
               <button
                 onClick={() => setSelectionState({ phase: 'idle', viewKey })}
                 className="absolute top-2 right-2 text-gray-400 hover:text-white leading-none"
@@ -397,7 +397,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
 
           {/* Range stats panel */}
           {effectiveSelection.phase === 'range' && rangeStats && (
-            <div className="mt-3 p-3 bg-slate-800 rounded-lg text-white text-xs relative">
+            <div className="mt-3 p-3 bg-zinc-800 rounded-lg text-white text-xs relative">
               <button
                 onClick={() => setSelectionState({ phase: 'idle', viewKey })}
                 className="absolute top-2 right-2 text-gray-400 hover:text-white leading-none"
@@ -442,7 +442,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
                   aria-label="Trip length"
                   value={windowDays}
                   onChange={(e) => setWindowDays(Number(e.target.value))}
-                  className="h-8 rounded-full border border-gray-200 bg-white px-3 text-xs text-gray-700 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200"
+                  className="h-8 rounded-full border border-gray-200 bg-white px-3 text-xs text-gray-700 dark:bg-zinc-800 dark:border-zinc-600 dark:text-gray-200"
                 >
                   {WINDOW_DURATIONS.map((d) => (
                     <option key={d} value={d}>
@@ -462,7 +462,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
 
       {/* Best-time windows panel */}
       {showBestTime && quietestBlocks.length > 0 && (
-        <div className="mt-3 p-3 bg-slate-800 rounded-lg text-white text-xs">
+        <div className="mt-3 p-3 bg-zinc-800 rounded-lg text-white text-xs">
           <div className="font-semibold text-emerald-400 mb-2">
             🌿 {quietestBlocks.length} quietest period{quietestBlocks.length !== 1 ? 's' : ''} for {windowDays}-day trips in {year}
           </div>
