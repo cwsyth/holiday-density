@@ -275,13 +275,15 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
                   effectiveSelection.phase === 'single' && dateStr === effectiveSelection.date;
                 const isInRange =
                   effectiveSelection.phase === 'range' &&
-                  dateStr! >= effectiveSelection.start &&
-                  dateStr! <= effectiveSelection.end;
+                  dateStr !== null &&
+                  dateStr >= effectiveSelection.start &&
+                  dateStr <= effectiveSelection.end;
                 const isRangeEndpoint =
                   effectiveSelection.phase === 'range' &&
+                  dateStr !== null &&
                   (dateStr === effectiveSelection.start || dateStr === effectiveSelection.end);
 
-                const isInBestTime = showBestTime && dateStr ? bestTimeSet.has(dateStr) : false;
+                const isInBestTime = showBestTime && dateStr !== null && bestTimeSet.has(dateStr);
 
                 let ringClass = '';
                 if (isSingleSelected || isRangeEndpoint) {
