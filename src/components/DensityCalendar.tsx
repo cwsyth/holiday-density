@@ -22,8 +22,9 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 /** Density scale is always 0–10 (representing 0 %–100 % of population). */
 const DENSITY_MAX = 10;
 
-const WINDOW_DURATIONS = [7, 10, 14] as const;
-type WindowDays = (typeof WINDOW_DURATIONS)[number];
+// Supported trip-length choices from 3 to 30 days inclusive.
+const WINDOW_DURATIONS = Array.from({ length: 28 }, (_, i) => i + 3);
+type WindowDays = number;
 
 function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
@@ -112,7 +113,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
   // ---------------------------------------------------------------------------
   const bestTimeWindows = React.useMemo(() => {
     if (!showBestTime) return [];
-    return getQuietestWindows(densityMap, year, windowDays, 3);
+    return getQuietestWindows(densityMap, year, windowDays);
   }, [showBestTime, densityMap, year, windowDays]);
 
   const bestTimeSet = React.useMemo(() => {
@@ -287,13 +288,13 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
 
                 let ringClass = '';
                 if (isSingleSelected || isRangeEndpoint) {
-                  ringClass = 'ring-2 ring-white';
+                  ringClass = 'ring-2 ring-cyan-300 dark:ring-cyan-400';
                 } else if (isInRange) {
-                  ringClass = 'ring-2 ring-amber-400';
+                  ringClass = 'ring-2 ring-amber-400 dark:ring-amber-300';
                 } else if (isInBestTime) {
-                  ringClass = 'ring-2 ring-emerald-400';
+                  ringClass = 'ring-2 ring-emerald-400 dark:ring-emerald-300';
                 } else if (isWeekend) {
-                  ringClass = 'ring-1 ring-inset ring-black/10';
+                  ringClass = 'ring-1 ring-inset ring-black/10 dark:ring-white/20';
                 }
 
                 return (
@@ -319,7 +320,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
           <div className="flex mt-2">
             <div className="w-5 sm:w-7 shrink-0" />
             <div className="flex-1 flex items-center gap-1 text-xs text-gray-400">
-              <div className="w-3 h-3 rounded-sm ring-1 ring-inset ring-black/10 bg-gray-100" />
+              <div className="w-3 h-3 rounded-sm ring-1 ring-inset ring-black/10 dark:ring-white/20 bg-gray-100" />
               <span>Weekend</span>
             </div>
           </div>
@@ -337,6 +338,59 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
             ))}
           </div>
 
+          {/* Single-day info panel */}
+          {effectiveSelection.phase === 'single' && singleInfo && (
+            <div className="mt-3 p-3 bg-slate-900 rounded-lg text-white text-xs relative">
+              <button
+                onClick={() => setSelectionState({ phase: 'idle', viewKey })}
+                className="absolute top-2 right-2 text-gray-400 hover:text-white leading-none"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+              <div className="pr-4">
+                {renderCellInfo(
+                  singleInfo.dateStr,
+                  singleInfo.density,
+                  singleInfo.weekday,
+                  singleInfo.monthIdx,
+                  singleInfo.day,
+                )}
+                <div className="mt-1.5 text-gray-400 text-[10px]">
+                  Click another date to select a range.
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Range stats panel */}
+          {effectiveSelection.phase === 'range' && rangeStats && (
+            <div className="mt-3 p-3 bg-slate-900 rounded-lg text-white text-xs relative">
+              <button
+                onClick={() => setSelectionState({ phase: 'idle', viewKey })}
+                className="absolute top-2 right-2 text-gray-400 hover:text-white leading-none"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+              <div className="pr-4">
+                <div className="font-semibold">
+                  {formatDateStr(effectiveSelection.start)} – {formatDateStr(effectiveSelection.end)}
+                </div>
+                <div className="mt-0.5 text-gray-300">{rangeStats.days} day{rangeStats.days !== 1 ? 's' : ''} selected</div>
+                <div className="mt-1 text-blue-300">
+                  Avg ~{Math.round(rangeStats.avg * 10)}% of population on holiday
+                </div>
+                <div className="mt-0.5 text-gray-300">
+                  Peak ~{rangeStats.peak * 10}% on at least one day
+                </div>
+                <div className="mt-1.5 text-gray-400 text-[10px]">
+                  Click any date to start a new selection.
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Best time to travel controls */}
           <div className="mt-4 flex items-center gap-2 flex-wrap">
             <button
@@ -352,19 +406,18 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
             {showBestTime && (
               <>
                 <span className="text-xs text-gray-500">Trip length:</span>
-                {WINDOW_DURATIONS.map((d) => (
-                  <button
-                    key={d}
-                    onClick={() => setWindowDays(d)}
-                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                      d === windowDays
-                        ? 'bg-emerald-600 text-white shadow-sm'
-                        : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    {d} days
-                  </button>
-                ))}
+                <select
+                  aria-label="Trip length"
+                  value={windowDays}
+                  onChange={(e) => setWindowDays(Number(e.target.value))}
+                  className="h-8 rounded-full border border-gray-200 bg-white px-3 text-xs text-gray-700 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200"
+                >
+                  {WINDOW_DURATIONS.map((d) => (
+                    <option key={d} value={d}>
+                      {d} days
+                    </option>
+                  ))}
+                </select>
               </>
             )}
           </div>
@@ -375,70 +428,17 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
       {/* Info panels                                                         */}
       {/* ------------------------------------------------------------------ */}
 
-      {/* Single-day info panel */}
-      {effectiveSelection.phase === 'single' && singleInfo && (
-        <div className="mt-3 p-3 bg-slate-900 rounded-lg text-white text-xs relative">
-          <button
-            onClick={() => setSelectionState({ phase: 'idle', viewKey })}
-            className="absolute top-2 right-2 text-gray-400 hover:text-white leading-none"
-            aria-label="Close"
-          >
-            ✕
-          </button>
-          <div className="pr-4">
-            {renderCellInfo(
-              singleInfo.dateStr,
-              singleInfo.density,
-              singleInfo.weekday,
-              singleInfo.monthIdx,
-              singleInfo.day,
-            )}
-            <div className="mt-1.5 text-gray-400 text-[10px]">
-              Click another date to select a range.
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Range stats panel */}
-      {effectiveSelection.phase === 'range' && rangeStats && (
-        <div className="mt-3 p-3 bg-slate-900 rounded-lg text-white text-xs relative">
-          <button
-            onClick={() => setSelectionState({ phase: 'idle', viewKey })}
-            className="absolute top-2 right-2 text-gray-400 hover:text-white leading-none"
-            aria-label="Close"
-          >
-            ✕
-          </button>
-          <div className="pr-4">
-            <div className="font-semibold">
-              {formatDateStr(effectiveSelection.start)} – {formatDateStr(effectiveSelection.end)}
-            </div>
-            <div className="mt-0.5 text-gray-300">{rangeStats.days} day{rangeStats.days !== 1 ? 's' : ''} selected</div>
-            <div className="mt-1 text-blue-300">
-              Avg ~{Math.round(rangeStats.avg * 10)}% of population on holiday
-            </div>
-            <div className="mt-0.5 text-gray-300">
-              Peak ~{rangeStats.peak * 10}% on at least one day
-            </div>
-            <div className="mt-1.5 text-gray-400 text-[10px]">
-              Click any date to start a new selection.
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Best-time windows panel */}
       {showBestTime && bestTimeWindows.length > 0 && (
         <div className="mt-3 p-3 bg-slate-900 rounded-lg text-white text-xs">
           <div className="font-semibold text-emerald-400 mb-2">
-            🌿 Top {bestTimeWindows.length} quietest {windowDays}-day periods in {year}
+            🌿 {bestTimeWindows.length} tied-for-quietest {windowDays}-day period{bestTimeWindows.length !== 1 ? 's' : ''} in {year}
           </div>
           <div className="space-y-1.5">
             {bestTimeWindows.map((w, i) => (
               <div key={w.start} className="flex items-center gap-2">
                 <span className="text-gray-400 w-4 shrink-0">{i + 1}.</span>
-                <div className="w-2 h-2 rounded-sm ring-2 ring-emerald-400 bg-transparent shrink-0" />
+                <div className="w-2 h-2 rounded-sm ring-2 ring-emerald-400 dark:ring-emerald-300 bg-transparent shrink-0" />
                 <span className="text-gray-100">
                   {formatDateStr(w.start)} – {formatDateStr(w.end)}
                 </span>

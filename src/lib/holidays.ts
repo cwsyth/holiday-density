@@ -95,6 +95,12 @@ function buildGermanyNationalPeriods(): HolidayPeriod[] {
 
 /** First year covered by the holiday data arrays (index 0). */
 const HOLIDAY_DATA_START_YEAR = 2025;
+/** Last year covered by the holiday data arrays. */
+const HOLIDAY_DATA_END_YEAR = 2030;
+const HOLIDAY_DATA_YEARS = Array.from(
+  { length: HOLIDAY_DATA_END_YEAR - HOLIDAY_DATA_START_YEAR + 1 },
+  (_, i) => HOLIDAY_DATA_START_YEAR + i,
+);
 
 /**
  * A compact encoding of a school-break period: [startMonth, startDay, endMonth, endDay].
@@ -574,7 +580,6 @@ function buildDenmarkPeriods(): HolidayPeriod[] {
     periods.push(single(addDays(easter, -3), 'Maundy Thursday', 'public'));
     periods.push(single(addDays(easter, -2), 'Good Friday', 'public'));
     periods.push(single(addDays(easter, 1), 'Easter Monday', 'public'));
-    periods.push(single(addDays(easter, 26), 'Store Bededag', 'public'));
     periods.push(single(addDays(easter, 39), 'Ascension Day', 'public'));
     periods.push(single(addDays(easter, 50), 'Whit Monday', 'public'));
     periods.push(single(dateOf(year, 6, 5), 'Constitution Day', 'public'));
@@ -776,39 +781,141 @@ function buildCzechPeriods(): HolidayPeriod[] {
   return periods;
 }
 
+/**
+ * France school holidays are staggered by the three metropolitan education zones
+ * (A, B, C). Near-term dates are sourced from OpenHolidays; later years are
+ * calendar-based estimates to keep the model continuous through 2030.
+ * Tuple format is [startMonth, startDay, endMonth, endDay].
+ */
+const FR_WINTER: Record<'ZA' | 'ZB' | 'ZC', BreakTuple[]> = {
+  ZA: [[2, 23, 3, 9], [2, 8, 2, 22], [2, 14, 2, 28], [2, 27, 3, 12], [2, 10, 2, 24], [2, 16, 3, 2]],
+  ZB: [[2, 9, 2, 23], [2, 15, 3, 1], [2, 21, 3, 7], [2, 13, 2, 27], [2, 9, 2, 23], [2, 22, 3, 8]],
+  ZC: [[2, 16, 3, 2], [2, 22, 3, 8], [2, 7, 2, 21], [2, 20, 3, 5], [2, 16, 3, 2], [2, 8, 2, 22]],
+};
+
+const FR_SPRING: Record<'ZA' | 'ZB' | 'ZC', BreakTuple[]> = {
+  ZA: [[4, 20, 5, 4], [4, 5, 4, 19], [4, 11, 4, 25], [4, 23, 5, 7], [4, 6, 4, 20], [4, 12, 4, 26]],
+  ZB: [[4, 6, 4, 21], [4, 12, 4, 26], [4, 18, 5, 2], [4, 9, 4, 23], [4, 13, 4, 27], [4, 19, 5, 3]],
+  ZC: [[4, 13, 4, 27], [4, 19, 5, 3], [4, 4, 4, 18], [4, 16, 4, 30], [4, 20, 5, 4], [4, 5, 4, 19]],
+};
+
+const FR_SUMMER: BreakTuple[] = [
+  [7, 6, 8, 31],
+  [7, 5, 8, 31],
+  [7, 4, 8, 31],
+  [7, 2, 8, 31],
+  [7, 7, 8, 31],
+  [7, 6, 8, 31],
+];
+
+const FR_ALL_SAINTS: BreakTuple[] = [
+  [10, 19, 11, 2],
+  [10, 18, 11, 1],
+  [10, 17, 10, 31],
+  [10, 22, 11, 5],
+  [10, 21, 11, 4],
+  [10, 20, 11, 3],
+];
+
+function buildFranceRegions(): RegionHolidays[] {
+  // Population units are in thousands, matching CountryHolidays.population.
+  // Zone values are modeled so their sum matches the national total.
+  const zones: { code: 'ZA' | 'ZB' | 'ZC'; name: string; population: number }[] = [
+    { code: 'ZA', name: 'Zone A', population: 22_800 },
+    { code: 'ZB', name: 'Zone B', population: 22_700 },
+    { code: 'ZC', name: 'Zone C', population: 22_874 },
+  ];
+
+  return zones.map(({ code, name, population }) => {
+    const periods: HolidayPeriod[] = [];
+    for (const year of HOLIDAY_DATA_YEARS) {
+      const idx = year - HOLIDAY_DATA_START_YEAR;
+
+      const winter = FR_WINTER[code][idx];
+      periods.push(period(dateOf(year, winter[0], winter[1]), dateOf(year, winter[2], winter[3]), 'Winter Holidays', 'school'));
+
+      const spring = FR_SPRING[code][idx];
+      periods.push(period(dateOf(year, spring[0], spring[1]), dateOf(year, spring[2], spring[3]), 'Spring Holidays', 'school'));
+    }
+    return { code: `FR-${code}`, name, population, periods };
+  });
+}
+
+function buildFrancePeriods(): HolidayPeriod[] {
+  const periods: HolidayPeriod[] = [];
+
+  for (const year of HOLIDAY_DATA_YEARS) {
+    const easter = easterDate(year);
+    const idx = year - HOLIDAY_DATA_START_YEAR;
+
+    // National public holidays (metropolitan scope)
+    periods.push(single(dateOf(year, 1, 1), 'New Year', 'public'));
+    periods.push(single(addDays(easter, 1), 'Easter Monday', 'public'));
+    periods.push(single(dateOf(year, 5, 1), 'Labour Day', 'public'));
+    periods.push(single(dateOf(year, 5, 8), 'Victory Day', 'public'));
+    periods.push(single(addDays(easter, 39), 'Ascension Day', 'public'));
+    periods.push(single(addDays(easter, 50), 'Pentecost Monday', 'public'));
+    periods.push(single(dateOf(year, 7, 14), 'National Day', 'public'));
+    periods.push(single(dateOf(year, 8, 15), 'Assumption Day', 'public'));
+    periods.push(single(dateOf(year, 11, 1), 'All Saints Day', 'public'));
+    periods.push(single(dateOf(year, 11, 11), 'Armistice Day', 'public'));
+    periods.push(single(dateOf(year, 12, 25), 'Christmas Day', 'public'));
+
+    // Nationwide school breaks
+    const summer = FR_SUMMER[idx];
+    periods.push(period(dateOf(year, summer[0], summer[1]), dateOf(year, summer[2], summer[3]), 'Summer Holidays', 'school'));
+
+    const allSaints = FR_ALL_SAINTS[idx];
+    periods.push(period(dateOf(year, allSaints[0], allSaints[1]), dateOf(year, allSaints[2], allSaints[3]), 'All Saints Holidays', 'school'));
+
+    periods.push(period(dateOf(year, 12, 21), dateOf(year, 12, 31), 'Christmas Holidays', 'school'));
+    if (year < HOLIDAY_DATA_END_YEAR) {
+      periods.push(period(dateOf(year + 1, 1, 1), dateOf(year + 1, 1, 4), 'Christmas Holidays', 'school'));
+    }
+  }
+
+  return periods;
+}
+
 export const HOLIDAY_DATA: CountryHolidays[] = [
   {
-    code: 'DE', name: 'Germany', population: 84_600,
+    code: 'DE', name: 'Germany', population: 84_358,
     regions: buildGermanyRegions(),
     periods: buildGermanyNationalPeriods(),
   },
   {
-    code: 'AT', name: 'Austria', population: 9_100,
+    code: 'AT', name: 'Austria', population: 9_159,
     regions: buildAustriaRegions(),
     periods: buildAustriaPeriods(),
   },
   {
-    code: 'CH', name: 'Switzerland', population: 8_700,
+    code: 'CH', name: 'Switzerland', population: 8_963,
     regions: buildSwitzerlandRegions(),
     periods: buildSwitzerlandPeriods(),
   },
-  { code: 'ES', name: 'Spain',          population: 47_500, periods: buildSpainPeriods() },
-  { code: 'BE', name: 'Belgium',        population: 11_600, periods: buildBelgiumPeriods() },
-  { code: 'DK', name: 'Denmark',        population:  5_900, periods: buildDenmarkPeriods() },
-  { code: 'IT', name: 'Italy',          population: 59_000, periods: buildItalyPeriods() },
-  { code: 'NO', name: 'Norway',         population:  5_500, periods: buildNorwayPeriods() },
   {
-    code: 'PL', name: 'Poland', population: 37_000,
+    code: 'FR', name: 'France', population: 68_374,
+    regions: buildFranceRegions(),
+    periods: buildFrancePeriods(),
+  },
+  { code: 'ES', name: 'Spain',          population: 49_077, periods: buildSpainPeriods() },
+  { code: 'BE', name: 'Belgium',        population: 11_825, periods: buildBelgiumPeriods() },
+  { code: 'DK', name: 'Denmark',        population:  5_980, periods: buildDenmarkPeriods() },
+  { code: 'IT', name: 'Italy',          population: 58_934, periods: buildItalyPeriods() },
+  { code: 'NO', name: 'Norway',         population:  5_576, periods: buildNorwayPeriods() },
+  {
+    code: 'PL', name: 'Poland', population: 36_497,
     regions: buildPolandRegions(),
     periods: buildPolandPeriods(),
   },
-  { code: 'CZ', name: 'Czech Republic', population: 10_900, periods: buildCzechPeriods() },
+  { code: 'CZ', name: 'Czech Republic', population: 10_909, periods: buildCzechPeriods() },
 ];
 
 export const COUNTRIES = [
   { code: 'DE', name: 'Germany', flag: '🇩🇪' },
   { code: 'AT', name: 'Austria', flag: '🇦🇹' },
   { code: 'CH', name: 'Switzerland', flag: '🇨🇭' },
+  { code: 'FR', name: 'France', flag: '🇫🇷' },
   { code: 'ES', name: 'Spain', flag: '🇪🇸' },
   { code: 'BE', name: 'Belgium', flag: '🇧🇪' },
   { code: 'DK', name: 'Denmark', flag: '🇩🇰' },
@@ -940,14 +1047,13 @@ export function getDensityMap(year: number, countryCodes: string[]): Map<string,
 }
 
 /**
- * Returns the top `topN` non-overlapping windows of `windowDays` consecutive days
- * with the lowest average density, sorted chronologically.
+ * Returns all windows of `windowDays` consecutive days that tie for the
+ * lowest average density, sorted chronologically.
  */
 export function getQuietestWindows(
   densityMap: Map<string, number>,
   year: number,
   windowDays: number,
-  topN: number,
 ): Array<{ start: string; end: string; avgDensity: number }> {
   // Build ordered list of all dates in the year
   const allDates: string[] = [];
@@ -977,13 +1083,13 @@ export function getQuietestWindows(
   // Sort by average density ascending (quietest first)
   candidates.sort((a, b) => a.avgDensity - b.avgDensity);
 
-  // Pick top N non-overlapping windows
-  const result: Array<{ start: string; end: string; avgDensity: number }> = [];
-  for (const w of candidates) {
-    if (result.length >= topN) break;
-    const overlaps = result.some((r) => !(w.end < r.start || w.start > r.end));
-    if (!overlaps) result.push(w);
-  }
+  if (candidates.length === 0) return [];
+
+  const minAvg = candidates[0].avgDensity;
+  // Sliding-window averages are floating-point values; 1e-9 safely absorbs tiny
+  // precision noise while still treating practically-equal minima as ties.
+  const EPSILON = 1e-9;
+  const result = candidates.filter((w) => Math.abs(w.avgDensity - minAvg) <= EPSILON);
 
   // Return in chronological order
   result.sort((a, b) => (a.start < b.start ? -1 : 1));
