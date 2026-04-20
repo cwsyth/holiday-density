@@ -1,9 +1,11 @@
 import type { NextConfig } from "next";
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "/holiday-density";
+
 const nextConfig: NextConfig = {
   output: "export",
-  basePath: "/holiday-density",
-  assetPrefix: "/holiday-density",
+  basePath,
+  assetPrefix: basePath,
   images: {
     unoptimized: true,
   },
