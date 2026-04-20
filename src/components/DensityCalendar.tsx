@@ -1,7 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import { getDensityMap, isCountryOnHoliday, getRegionsOnHoliday, getRegionCount, getHolidayNamesForDate, COUNTRIES } from '@/lib/holidays';
+import {
+  getDensityMap,
+  isCountryOnHoliday,
+  getRegionsOnHoliday,
+  getRegionCount,
+  getHolidayNamesForDate,
+  getQuietestWindows,
+  COUNTRIES,
+} from '@/lib/holidays';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type Props = {
@@ -13,6 +21,9 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 
 /** Density scale is always 0–10 (representing 0 %–100 % of population). */
 const DENSITY_MAX = 10;
+
+const WINDOW_DURATIONS = [7, 10, 14] as const;
+type WindowDays = (typeof WINDOW_DURATIONS)[number];
 
 function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
@@ -36,19 +47,55 @@ function densityColor(density: number): string {
   return colors[Math.min(density - 1, colors.length - 1)];
 }
 
+/** Format a YYYY-MM-DD string as "Mon D, YYYY". */
+function formatDateStr(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return `${MONTHS[m - 1]} ${d}, ${y}`;
+}
+
+/** Iterate over all dates in [start, end] inclusive and call cb for each. */
+function eachDate(start: string, end: string, cb: (dateStr: string) => void): void {
+  const [sy, sm, sd] = start.split('-').map(Number);
+  const d = new Date(sy, sm - 1, sd);
+  const [ey, em, ed] = end.split('-').map(Number);
+  const endTs = new Date(ey, em - 1, ed).getTime();
+  while (d.getTime() <= endTs) {
+    const y = d.getFullYear();
+    const mo = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    cb(`${y}-${mo}-${day}`);
+    d.setDate(d.getDate() + 1);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Selection state machine
+// ---------------------------------------------------------------------------
+type SelectionState =
+  | { phase: 'idle' }
+  | { phase: 'single'; date: string }
+  | { phase: 'range'; start: string; end: string };
 
 export default function DensityCalendar({ year, countryCodes }: Props) {
   // Key to detect when the view changes (year or selected countries).
   const viewKey = `${year}:${countryCodes.join(',')}`;
 
-  // Store the view context alongside the clicked date so the panel
-  // automatically clears when the user switches year/country.
-  const [clickedState, setClickedState] = useState<{ viewKey: string; dateStr: string } | null>(null);
-  const clickedCell = clickedState?.viewKey === viewKey ? clickedState.dateStr : null;
+  const [selectionState, setSelectionState] = useState<SelectionState & { viewKey: string }>({
+    phase: 'idle',
+    viewKey,
+  });
+
+  // Best-time-to-travel state
+  const [showBestTime, setShowBestTime] = useState(false);
+  const [windowDays, setWindowDays] = useState<WindowDays>(7);
+
+  // Clear selection when the view changes
+  const effectiveSelection: SelectionState =
+    selectionState.viewKey === viewKey ? selectionState : { phase: 'idle' };
 
   const densityMap = React.useMemo(
     () => getDensityMap(year, countryCodes),
-    [year, countryCodes]
+    [year, countryCodes],
   );
 
   const isSingleCountry = countryCodes.length === 1;
@@ -60,7 +107,56 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
     return COUNTRIES.filter((c) => countryCodes.includes(c.code));
   }, [countryCodes]);
 
-  /** Shared tooltip/panel content for a given date. */
+  // ---------------------------------------------------------------------------
+  // Best-time windows
+  // ---------------------------------------------------------------------------
+  const bestTimeWindows = React.useMemo(() => {
+    if (!showBestTime) return [];
+    return getQuietestWindows(densityMap, year, windowDays, 3);
+  }, [showBestTime, densityMap, year, windowDays]);
+
+  const bestTimeSet = React.useMemo(() => {
+    const set = new Set<string>();
+    for (const w of bestTimeWindows) {
+      eachDate(w.start, w.end, (d) => set.add(d));
+    }
+    return set;
+  }, [bestTimeWindows]);
+
+  // ---------------------------------------------------------------------------
+  // Range stats
+  // ---------------------------------------------------------------------------
+  const rangeStats = React.useMemo(() => {
+    if (effectiveSelection.phase !== 'range') return null;
+    const { start, end } = effectiveSelection;
+    const densities: number[] = [];
+    eachDate(start, end, (d) => densities.push(densityMap.get(d) ?? 0));
+    const avg = densities.reduce((s, v) => s + v, 0) / densities.length;
+    const peak = Math.max(...densities);
+    return { days: densities.length, avg, peak };
+  }, [effectiveSelection, densityMap]);
+
+  // ---------------------------------------------------------------------------
+  // Click handler
+  // ---------------------------------------------------------------------------
+  function handleCellClick(dateStr: string) {
+    const sel = effectiveSelection;
+    if (sel.phase === 'idle' || sel.phase === 'range') {
+      setSelectionState({ phase: 'single', date: dateStr, viewKey });
+    } else {
+      // phase === 'single'
+      if (dateStr === sel.date) {
+        setSelectionState({ phase: 'idle', viewKey });
+      } else {
+        const [s, e] = dateStr < sel.date ? [dateStr, sel.date] : [sel.date, dateStr];
+        setSelectionState({ phase: 'range', start: s, end: e, viewKey });
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Tooltip/panel content for a single date
+  // ---------------------------------------------------------------------------
   function renderCellInfo(dateStr: string, density: number, weekday: string, monthIdx: number, day: number) {
     const onHolidayCountries =
       density > 0 && !isSingleCountry
@@ -109,18 +205,20 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
     );
   }
 
-  // Compute info for the clicked cell (used by the info panel)
-  const clickedInfo = React.useMemo(() => {
-    if (!clickedCell) return null;
-    const [cy, cm, cd] = clickedCell.split('-').map(Number);
-    const date = new Date(cy, cm - 1, cd);
+  // Compute info for the single-day panel
+  const singleInfo = React.useMemo(() => {
+    if (effectiveSelection.phase !== 'single') return null;
+    const dateStr = effectiveSelection.date;
+    const [, cm, cd] = dateStr.split('-').map(Number);
+    const date = new Date(year, cm - 1, cd);
     return {
-      density: densityMap.get(clickedCell) ?? 0,
+      dateStr,
+      density: densityMap.get(dateStr) ?? 0,
       weekday: date.toLocaleDateString('en-US', { weekday: 'short' }),
       monthIdx: cm - 1,
       day: cd,
     };
-  }, [clickedCell, densityMap]);
+  }, [effectiveSelection, densityMap, year]);
 
   return (
     <TooltipProvider delayDuration={100}>
@@ -171,22 +269,39 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
                 const date = new Date(year, monthIdx, day);
                 const weekday = date.toLocaleDateString('en-US', { weekday: 'short' });
                 const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-                const isClicked = clickedCell === dateStr;
+
+                // Determine selection highlight
+                const isSingleSelected =
+                  effectiveSelection.phase === 'single' && dateStr === effectiveSelection.date;
+                const isInRange =
+                  effectiveSelection.phase === 'range' &&
+                  dateStr !== null &&
+                  dateStr >= effectiveSelection.start &&
+                  dateStr <= effectiveSelection.end;
+                const isRangeEndpoint =
+                  effectiveSelection.phase === 'range' &&
+                  dateStr !== null &&
+                  (dateStr === effectiveSelection.start || dateStr === effectiveSelection.end);
+
+                const isInBestTime = showBestTime && dateStr !== null && bestTimeSet.has(dateStr);
+
+                let ringClass = '';
+                if (isSingleSelected || isRangeEndpoint) {
+                  ringClass = 'ring-2 ring-white';
+                } else if (isInRange) {
+                  ringClass = 'ring-2 ring-amber-400';
+                } else if (isInBestTime) {
+                  ringClass = 'ring-2 ring-emerald-400';
+                } else if (isWeekend) {
+                  ringClass = 'ring-1 ring-inset ring-black/10';
+                }
 
                 return (
                   <Tooltip key={monthIdx}>
                     <TooltipTrigger asChild>
                       <div
-                        className={`flex-1 h-3 sm:h-4 m-px rounded-sm cursor-pointer transition-opacity hover:opacity-80 ${bg} ${
-                          isClicked
-                            ? 'ring-2 ring-white'
-                            : isWeekend
-                            ? 'ring-1 ring-inset ring-black/10'
-                            : ''
-                        }`}
-                        onClick={() =>
-                          setClickedState(isClicked ? null : { viewKey, dateStr: dateStr! })
-                        }
+                        className={`flex-1 h-3 sm:h-4 m-px rounded-sm cursor-pointer transition-opacity hover:opacity-80 ${bg} ${ringClass}`}
+                        onClick={() => dateStr && handleCellClick(dateStr)}
                       />
                     </TooltipTrigger>
                     <TooltipContent side="top" className="text-xs">
@@ -221,14 +336,50 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
               </div>
             ))}
           </div>
+
+          {/* Best time to travel controls */}
+          <div className="mt-4 flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setShowBestTime((v) => !v)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                showBestTime
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              🌿 Find quietest periods
+            </button>
+            {showBestTime && (
+              <>
+                <span className="text-xs text-gray-500">Trip length:</span>
+                {WINDOW_DURATIONS.map((d) => (
+                  <button
+                    key={d}
+                    onClick={() => setWindowDays(d)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                      d === windowDays
+                        ? 'bg-emerald-600 text-white shadow-sm'
+                        : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    {d} days
+                  </button>
+                ))}
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Clicked-cell info panel — visible on all screen sizes, useful on mobile where hover is unavailable */}
-      {clickedCell && clickedInfo && (
+      {/* ------------------------------------------------------------------ */}
+      {/* Info panels                                                         */}
+      {/* ------------------------------------------------------------------ */}
+
+      {/* Single-day info panel */}
+      {effectiveSelection.phase === 'single' && singleInfo && (
         <div className="mt-3 p-3 bg-slate-900 rounded-lg text-white text-xs relative">
           <button
-            onClick={() => setClickedState(null)}
+            onClick={() => setSelectionState({ phase: 'idle', viewKey })}
             className="absolute top-2 right-2 text-gray-400 hover:text-white leading-none"
             aria-label="Close"
           >
@@ -236,12 +387,69 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
           </button>
           <div className="pr-4">
             {renderCellInfo(
-              clickedCell,
-              clickedInfo.density,
-              clickedInfo.weekday,
-              clickedInfo.monthIdx,
-              clickedInfo.day,
+              singleInfo.dateStr,
+              singleInfo.density,
+              singleInfo.weekday,
+              singleInfo.monthIdx,
+              singleInfo.day,
             )}
+            <div className="mt-1.5 text-gray-400 text-[10px]">
+              Click another date to select a range.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Range stats panel */}
+      {effectiveSelection.phase === 'range' && rangeStats && (
+        <div className="mt-3 p-3 bg-slate-900 rounded-lg text-white text-xs relative">
+          <button
+            onClick={() => setSelectionState({ phase: 'idle', viewKey })}
+            className="absolute top-2 right-2 text-gray-400 hover:text-white leading-none"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+          <div className="pr-4">
+            <div className="font-semibold">
+              {formatDateStr(effectiveSelection.start)} – {formatDateStr(effectiveSelection.end)}
+            </div>
+            <div className="mt-0.5 text-gray-300">{rangeStats.days} day{rangeStats.days !== 1 ? 's' : ''} selected</div>
+            <div className="mt-1 text-blue-300">
+              Avg ~{Math.round(rangeStats.avg * 10)}% of population on holiday
+            </div>
+            <div className="mt-0.5 text-gray-300">
+              Peak ~{rangeStats.peak * 10}% on at least one day
+            </div>
+            <div className="mt-1.5 text-gray-400 text-[10px]">
+              Click any date to start a new selection.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Best-time windows panel */}
+      {showBestTime && bestTimeWindows.length > 0 && (
+        <div className="mt-3 p-3 bg-slate-900 rounded-lg text-white text-xs">
+          <div className="font-semibold text-emerald-400 mb-2">
+            🌿 Top {bestTimeWindows.length} quietest {windowDays}-day periods in {year}
+          </div>
+          <div className="space-y-1.5">
+            {bestTimeWindows.map((w, i) => (
+              <div key={w.start} className="flex items-center gap-2">
+                <span className="text-gray-400 w-4 shrink-0">{i + 1}.</span>
+                <div className="w-2 h-2 rounded-sm ring-2 ring-emerald-400 bg-transparent shrink-0" />
+                <span className="text-gray-100">
+                  {formatDateStr(w.start)} – {formatDateStr(w.end)}
+                </span>
+                <span className="text-emerald-400 ml-auto shrink-0">
+                  avg ~{Math.round(w.avgDensity * 10)}%
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 text-gray-500 text-[10px]">
+            Green-ringed cells show these windows on the calendar above.
           </div>
         </div>
       )}
