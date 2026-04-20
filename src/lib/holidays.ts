@@ -978,6 +978,7 @@ export function getQuietestWindows(
   if (candidates.length === 0) return [];
 
   const minAvg = candidates[0].avgDensity;
+  // Sliding-window averages are floating-point values, so compare with tolerance.
   const EPSILON = 1e-9;
   const result = candidates.filter((w) => Math.abs(w.avgDensity - minAvg) <= EPSILON);
 

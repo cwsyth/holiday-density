@@ -22,6 +22,7 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 /** Density scale is always 0–10 (representing 0 %–100 % of population). */
 const DENSITY_MAX = 10;
 
+// Supported trip-length choices from 3 to 30 days inclusive.
 const WINDOW_DURATIONS = Array.from({ length: 28 }, (_, i) => i + 3);
 type WindowDays = number;
 
