@@ -916,7 +916,7 @@ export function getHolidayNamesForDate(countryCode: string, dateStr: string): st
     if (isDateInPeriod(dateStr, p)) names.add(p.name);
   }
 
-  // Regional periods (include national periods that apply to regions too)
+  // Regional periods
   for (const region of country.regions ?? []) {
     for (const p of region.periods) {
       if (isDateInPeriod(dateStr, p)) names.add(p.name);
