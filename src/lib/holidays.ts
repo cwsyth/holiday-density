@@ -775,6 +775,99 @@ function buildCzechPeriods(): HolidayPeriod[] {
   return periods;
 }
 
+/**
+ * France school holidays are staggered by the three metropolitan education zones
+ * (A, B, C). Near-term dates are sourced from OpenHolidays; later years are
+ * calendar-based estimates to keep the model continuous through 2030.
+ */
+const FR_WINTER: Record<'ZA' | 'ZB' | 'ZC', BreakTuple[]> = {
+  ZA: [[2,23,3, 9],[2, 8,2,22],[2,14,2,28],[2,27,3,12],[2,10,2,24],[2,16,3, 2]],
+  ZB: [[2, 9,2,23],[2,15,3, 1],[2,21,3, 7],[2,13,2,27],[2, 9,2,23],[2,22,3, 8]],
+  ZC: [[2,16,3, 2],[2,22,3, 8],[2, 7,2,21],[2,20,3, 5],[2,16,3, 2],[2, 8,2,22]],
+};
+
+const FR_SPRING: Record<'ZA' | 'ZB' | 'ZC', BreakTuple[]> = {
+  ZA: [[4,20,5, 4],[4, 5,4,19],[4,11,4,25],[4,23,5, 7],[4, 6,4,20],[4,12,4,26]],
+  ZB: [[4, 6,4,21],[4,12,4,26],[4,18,5, 2],[4, 9,4,23],[4,13,4,27],[4,19,5, 3]],
+  ZC: [[4,13,4,27],[4,19,5, 3],[4, 4,4,18],[4,16,4,30],[4,20,5, 4],[4, 5,4,19]],
+};
+
+const FR_SUMMER: BreakTuple[] = [
+  [7, 6,8,31],
+  [7, 5,8,31],
+  [7, 4,8,31],
+  [7, 2,8,31],
+  [7, 7,8,31],
+  [7, 6,8,31],
+];
+
+const FR_ALL_SAINTS: BreakTuple[] = [
+  [10,19,11,2],
+  [10,18,11,1],
+  [10,17,10,31],
+  [10,22,11,5],
+  [10,21,11,4],
+  [10,20,11,3],
+];
+
+function buildFranceRegions(): RegionHolidays[] {
+  const zones: { code: 'ZA' | 'ZB' | 'ZC'; name: string; population: number }[] = [
+    { code: 'ZA', name: 'Zone A', population: 22_800 },
+    { code: 'ZB', name: 'Zone B', population: 22_700 },
+    { code: 'ZC', name: 'Zone C', population: 22_874 },
+  ];
+
+  return zones.map(({ code, name, population }) => {
+    const periods: HolidayPeriod[] = [];
+    for (const year of [2025, 2026, 2027, 2028, 2029, 2030]) {
+      const idx = year - HOLIDAY_DATA_START_YEAR;
+
+      const winter = FR_WINTER[code][idx];
+      periods.push(period(dateOf(year, winter[0], winter[1]), dateOf(year, winter[2], winter[3]), 'Winter Holidays', 'school'));
+
+      const spring = FR_SPRING[code][idx];
+      periods.push(period(dateOf(year, spring[0], spring[1]), dateOf(year, spring[2], spring[3]), 'Spring Holidays', 'school'));
+    }
+    return { code: `FR-${code}`, name, population, periods };
+  });
+}
+
+function buildFrancePeriods(): HolidayPeriod[] {
+  const periods: HolidayPeriod[] = [];
+
+  for (const year of [2025, 2026, 2027, 2028, 2029, 2030]) {
+    const easter = easterDate(year);
+    const idx = year - HOLIDAY_DATA_START_YEAR;
+
+    // National public holidays (metropolitan scope)
+    periods.push(single(dateOf(year, 1, 1), 'New Year', 'public'));
+    periods.push(single(addDays(easter, 1), 'Easter Monday', 'public'));
+    periods.push(single(dateOf(year, 5, 1), 'Labour Day', 'public'));
+    periods.push(single(dateOf(year, 5, 8), 'Victory Day', 'public'));
+    periods.push(single(addDays(easter, 39), 'Ascension Day', 'public'));
+    periods.push(single(addDays(easter, 50), 'Pentecost Monday', 'public'));
+    periods.push(single(dateOf(year, 7, 14), 'National Day', 'public'));
+    periods.push(single(dateOf(year, 8, 15), 'Assumption Day', 'public'));
+    periods.push(single(dateOf(year, 11, 1), 'All Saints Day', 'public'));
+    periods.push(single(dateOf(year, 11, 11), 'Armistice Day', 'public'));
+    periods.push(single(dateOf(year, 12, 25), 'Christmas Day', 'public'));
+
+    // Nationwide school breaks
+    const summer = FR_SUMMER[idx];
+    periods.push(period(dateOf(year, summer[0], summer[1]), dateOf(year, summer[2], summer[3]), 'Summer Holidays', 'school'));
+
+    const allSaints = FR_ALL_SAINTS[idx];
+    periods.push(period(dateOf(year, allSaints[0], allSaints[1]), dateOf(year, allSaints[2], allSaints[3]), 'All Saints Holidays', 'school'));
+
+    periods.push(period(dateOf(year, 12, 21), dateOf(year, 12, 31), 'Christmas Holidays', 'school'));
+    if (year < 2030) {
+      periods.push(period(dateOf(year + 1, 1, 1), dateOf(year + 1, 1, 4), 'Christmas Holidays', 'school'));
+    }
+  }
+
+  return periods;
+}
+
 export const HOLIDAY_DATA: CountryHolidays[] = [
   {
     code: 'DE', name: 'Germany', population: 84_358,
@@ -790,6 +883,11 @@ export const HOLIDAY_DATA: CountryHolidays[] = [
     code: 'CH', name: 'Switzerland', population: 8_963,
     regions: buildSwitzerlandRegions(),
     periods: buildSwitzerlandPeriods(),
+  },
+  {
+    code: 'FR', name: 'France', population: 68_374,
+    regions: buildFranceRegions(),
+    periods: buildFrancePeriods(),
   },
   { code: 'ES', name: 'Spain',          population: 49_077, periods: buildSpainPeriods() },
   { code: 'BE', name: 'Belgium',        population: 11_825, periods: buildBelgiumPeriods() },
@@ -808,6 +906,7 @@ export const COUNTRIES = [
   { code: 'DE', name: 'Germany', flag: '🇩🇪' },
   { code: 'AT', name: 'Austria', flag: '🇦🇹' },
   { code: 'CH', name: 'Switzerland', flag: '🇨🇭' },
+  { code: 'FR', name: 'France', flag: '🇫🇷' },
   { code: 'ES', name: 'Spain', flag: '🇪🇸' },
   { code: 'BE', name: 'Belgium', flag: '🇧🇪' },
   { code: 'DK', name: 'Denmark', flag: '🇩🇰' },

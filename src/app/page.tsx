@@ -39,7 +39,7 @@ export default function Home() {
           <p className="text-gray-500 text-sm max-w-2xl">
             Visualize the share of the population on public or school holidays across Europe.
             Darker cells indicate a higher percentage of the combined population is off simultaneously —
-            ideal for planning travel or remote work. Germany, Austria, Poland, and Switzerland are
+            ideal for planning travel or remote work. Germany, Austria, Poland, Switzerland, and France are
             modelled by region to reflect staggered school holiday schedules.
           </p>
         </div>
@@ -100,7 +100,7 @@ export default function Home() {
             <div className="mt-3">
               <CardTitle className="text-lg flex items-center gap-2">
                 {activeTab === 'all' ? (
-                  `All 10 Countries — ${year}`
+                  `All 11 Countries — ${year}`
                 ) : (
                   <>
                     <Image
@@ -117,7 +117,7 @@ export default function Home() {
               </CardTitle>
               <CardDescription className="text-xs mt-0.5">
                 {activeTab === 'all'
-                  ? 'Showing combined holiday density across Germany, Austria, Switzerland, Spain, Belgium, Denmark, Italy, Norway, Poland, and Czech Republic'
+                  ? 'Showing combined holiday density across Germany, Austria, Switzerland, France, Spain, Belgium, Denmark, Italy, Norway, Poland, and Czech Republic'
                   : `Showing public holidays and school holidays for ${activeCountry?.name}`}
               </CardDescription>
             </div>
