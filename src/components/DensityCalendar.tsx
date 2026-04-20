@@ -407,9 +407,10 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
               <>
                 <span className="text-xs text-gray-500">Trip length:</span>
                 <select
+                  aria-label="Trip length"
                   value={windowDays}
                   onChange={(e) => setWindowDays(Number(e.target.value))}
-                  className="h-8 rounded-full border border-gray-200 bg-white px-3 text-xs text-gray-700"
+                  className="h-8 rounded-full border border-gray-200 bg-white px-3 text-xs text-gray-700 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200"
                 >
                   {WINDOW_DURATIONS.map((d) => (
                     <option key={d} value={d}>
