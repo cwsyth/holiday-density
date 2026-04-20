@@ -97,6 +97,10 @@ function buildGermanyNationalPeriods(): HolidayPeriod[] {
 const HOLIDAY_DATA_START_YEAR = 2025;
 /** Last year covered by the holiday data arrays. */
 const HOLIDAY_DATA_END_YEAR = 2030;
+const HOLIDAY_DATA_YEARS = Array.from(
+  { length: HOLIDAY_DATA_END_YEAR - HOLIDAY_DATA_START_YEAR + 1 },
+  (_, i) => HOLIDAY_DATA_START_YEAR + i,
+);
 
 /**
  * A compact encoding of a school-break period: [startMonth, startDay, endMonth, endDay].
@@ -805,12 +809,12 @@ const FR_SUMMER: BreakTuple[] = [
 ];
 
 const FR_ALL_SAINTS: BreakTuple[] = [
-  [10,19,11,2],
-  [10,18,11,1],
-  [10,17,10,31],
-  [10,22,11,5],
-  [10,21,11,4],
-  [10,20,11,3],
+  [10, 19, 11, 2],
+  [10, 18, 11, 1],
+  [10, 17, 10, 31],
+  [10, 22, 11, 5],
+  [10, 21, 11, 4],
+  [10, 20, 11, 3],
 ];
 
 function buildFranceRegions(): RegionHolidays[] {
@@ -824,7 +828,7 @@ function buildFranceRegions(): RegionHolidays[] {
 
   return zones.map(({ code, name, population }) => {
     const periods: HolidayPeriod[] = [];
-    for (const year of [2025, 2026, 2027, 2028, 2029, 2030]) {
+    for (const year of HOLIDAY_DATA_YEARS) {
       const idx = year - HOLIDAY_DATA_START_YEAR;
 
       const winter = FR_WINTER[code][idx];
@@ -840,7 +844,7 @@ function buildFranceRegions(): RegionHolidays[] {
 function buildFrancePeriods(): HolidayPeriod[] {
   const periods: HolidayPeriod[] = [];
 
-  for (const year of [2025, 2026, 2027, 2028, 2029, 2030]) {
+  for (const year of HOLIDAY_DATA_YEARS) {
     const easter = easterDate(year);
     const idx = year - HOLIDAY_DATA_START_YEAR;
 
