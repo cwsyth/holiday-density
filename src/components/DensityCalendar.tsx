@@ -432,7 +432,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
       {showBestTime && bestTimeWindows.length > 0 && (
         <div className="mt-3 p-3 bg-slate-900 rounded-lg text-white text-xs">
           <div className="font-semibold text-emerald-400 mb-2">
-            🌿 {bestTimeWindows.length} quietest {windowDays}-day period{bestTimeWindows.length !== 1 ? 's' : ''} in {year}
+            🌿 {bestTimeWindows.length} tied-for-quietest {windowDays}-day period{bestTimeWindows.length !== 1 ? 's' : ''} in {year}
           </div>
           <div className="space-y-1.5">
             {bestTimeWindows.map((w, i) => (

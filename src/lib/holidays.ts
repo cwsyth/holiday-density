@@ -796,12 +796,12 @@ const FR_SPRING: Record<'ZA' | 'ZB' | 'ZC', BreakTuple[]> = {
 };
 
 const FR_SUMMER: BreakTuple[] = [
-  [7, 6,8,31],
-  [7, 5,8,31],
-  [7, 4,8,31],
-  [7, 2,8,31],
-  [7, 7,8,31],
-  [7, 6,8,31],
+  [7, 6, 8, 31],
+  [7, 5, 8, 31],
+  [7, 4, 8, 31],
+  [7, 2, 8, 31],
+  [7, 7, 8, 31],
+  [7, 6, 8, 31],
 ];
 
 const FR_ALL_SAINTS: BreakTuple[] = [
@@ -815,7 +815,7 @@ const FR_ALL_SAINTS: BreakTuple[] = [
 
 function buildFranceRegions(): RegionHolidays[] {
   // Population units are in thousands, matching CountryHolidays.population.
-  // Zone C carries the small remainder so zone totals match national population.
+  // Zone values are modeled so their sum matches the national total.
   const zones: { code: 'ZA' | 'ZB' | 'ZC'; name: string; population: number }[] = [
     { code: 'ZA', name: 'Zone A', population: 22_800 },
     { code: 'ZB', name: 'Zone B', population: 22_700 },
