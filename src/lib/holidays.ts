@@ -95,6 +95,8 @@ function buildGermanyNationalPeriods(): HolidayPeriod[] {
 
 /** First year covered by the holiday data arrays (index 0). */
 const HOLIDAY_DATA_START_YEAR = 2025;
+/** Last year covered by the holiday data arrays. */
+const HOLIDAY_DATA_END_YEAR = 2030;
 
 /**
  * A compact encoding of a school-break period: [startMonth, startDay, endMonth, endDay].
@@ -782,15 +784,15 @@ function buildCzechPeriods(): HolidayPeriod[] {
  * Tuple format is [startMonth, startDay, endMonth, endDay].
  */
 const FR_WINTER: Record<'ZA' | 'ZB' | 'ZC', BreakTuple[]> = {
-  ZA: [[2,23,3, 9],[2, 8,2,22],[2,14,2,28],[2,27,3,12],[2,10,2,24],[2,16,3, 2]],
-  ZB: [[2, 9,2,23],[2,15,3, 1],[2,21,3, 7],[2,13,2,27],[2, 9,2,23],[2,22,3, 8]],
-  ZC: [[2,16,3, 2],[2,22,3, 8],[2, 7,2,21],[2,20,3, 5],[2,16,3, 2],[2, 8,2,22]],
+  ZA: [[2, 23, 3, 9], [2, 8, 2, 22], [2, 14, 2, 28], [2, 27, 3, 12], [2, 10, 2, 24], [2, 16, 3, 2]],
+  ZB: [[2, 9, 2, 23], [2, 15, 3, 1], [2, 21, 3, 7], [2, 13, 2, 27], [2, 9, 2, 23], [2, 22, 3, 8]],
+  ZC: [[2, 16, 3, 2], [2, 22, 3, 8], [2, 7, 2, 21], [2, 20, 3, 5], [2, 16, 3, 2], [2, 8, 2, 22]],
 };
 
 const FR_SPRING: Record<'ZA' | 'ZB' | 'ZC', BreakTuple[]> = {
-  ZA: [[4,20,5, 4],[4, 5,4,19],[4,11,4,25],[4,23,5, 7],[4, 6,4,20],[4,12,4,26]],
-  ZB: [[4, 6,4,21],[4,12,4,26],[4,18,5, 2],[4, 9,4,23],[4,13,4,27],[4,19,5, 3]],
-  ZC: [[4,13,4,27],[4,19,5, 3],[4, 4,4,18],[4,16,4,30],[4,20,5, 4],[4, 5,4,19]],
+  ZA: [[4, 20, 5, 4], [4, 5, 4, 19], [4, 11, 4, 25], [4, 23, 5, 7], [4, 6, 4, 20], [4, 12, 4, 26]],
+  ZB: [[4, 6, 4, 21], [4, 12, 4, 26], [4, 18, 5, 2], [4, 9, 4, 23], [4, 13, 4, 27], [4, 19, 5, 3]],
+  ZC: [[4, 13, 4, 27], [4, 19, 5, 3], [4, 4, 4, 18], [4, 16, 4, 30], [4, 20, 5, 4], [4, 5, 4, 19]],
 };
 
 const FR_SUMMER: BreakTuple[] = [
@@ -813,6 +815,7 @@ const FR_ALL_SAINTS: BreakTuple[] = [
 
 function buildFranceRegions(): RegionHolidays[] {
   // Population units are in thousands, matching CountryHolidays.population.
+  // Zone C carries the small remainder so zone totals match national population.
   const zones: { code: 'ZA' | 'ZB' | 'ZC'; name: string; population: number }[] = [
     { code: 'ZA', name: 'Zone A', population: 22_800 },
     { code: 'ZB', name: 'Zone B', population: 22_700 },
@@ -862,7 +865,7 @@ function buildFrancePeriods(): HolidayPeriod[] {
     periods.push(period(dateOf(year, allSaints[0], allSaints[1]), dateOf(year, allSaints[2], allSaints[3]), 'All Saints Holidays', 'school'));
 
     periods.push(period(dateOf(year, 12, 21), dateOf(year, 12, 31), 'Christmas Holidays', 'school'));
-    if (year < 2030) {
+    if (year < HOLIDAY_DATA_END_YEAR) {
       periods.push(period(dateOf(year + 1, 1, 1), dateOf(year + 1, 1, 4), 'Christmas Holidays', 'school'));
     }
   }
