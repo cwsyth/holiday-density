@@ -133,9 +133,9 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
 
     for (let i = 1; i < bestTimeWindows.length; i++) {
       const next = bestTimeWindows[i];
-      const isConsecutiveOrOverlapping = next.start <= addDays(current.end, 1);
+      const shouldMerge = next.start <= addDays(current.end, 1);
 
-      if (isConsecutiveOrOverlapping) {
+      if (shouldMerge) {
         if (next.end > current.end) current.end = next.end;
         current.windowCount += 1;
       } else {
@@ -464,7 +464,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
       {showBestTime && quietestBlocks.length > 0 && (
         <div className="mt-3 p-3 bg-slate-800 rounded-lg text-white text-xs">
           <div className="font-semibold text-emerald-400 mb-2">
-            🌿 {quietestBlocks.length} quietest period block{quietestBlocks.length !== 1 ? 's' : ''} for {windowDays}-day trips in {year}
+            🌿 {quietestBlocks.length} merged quietest period block{quietestBlocks.length !== 1 ? 's' : ''} for {windowDays}-day trips in {year}
           </div>
           <div className="space-y-1.5">
             {quietestBlocks.map((w, i) => (
@@ -481,7 +481,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
             ))}
           </div>
           <div className="mt-2 text-gray-500 text-[10px]">
-            Green-ringed cells show these merged quiet blocks on the calendar above.
+            Consecutive tied quiet windows are merged; green-ringed cells show these blocks on the calendar above.
           </div>
         </div>
       )}
