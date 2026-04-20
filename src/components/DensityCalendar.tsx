@@ -287,7 +287,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
 
                 let ringClass = '';
                 if (isSingleSelected || isRangeEndpoint) {
-                  ringClass = 'ring-2 ring-cyan-300';
+                  ringClass = 'ring-2 ring-cyan-300 dark:ring-cyan-400';
                 } else if (isInRange) {
                   ringClass = 'ring-2 ring-amber-400 dark:ring-amber-300';
                 } else if (isInBestTime) {
@@ -430,7 +430,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
       {showBestTime && bestTimeWindows.length > 0 && (
         <div className="mt-3 p-3 bg-slate-900 rounded-lg text-white text-xs">
           <div className="font-semibold text-emerald-400 mb-2">
-            🌿 {bestTimeWindows.length} quietest {windowDays}-day periods in {year}
+            🌿 {bestTimeWindows.length} quietest {windowDays}-day period{bestTimeWindows.length !== 1 ? 's' : ''} in {year}
           </div>
           <div className="space-y-1.5">
             {bestTimeWindows.map((w, i) => (

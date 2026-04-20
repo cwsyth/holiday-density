@@ -947,8 +947,6 @@ export function getQuietestWindows(
   year: number,
   windowDays: number,
 ): Array<{ start: string; end: string; avgDensity: number }> {
-  if (windowDays <= 0) return [];
-
   // Build ordered list of all dates in the year
   const allDates: string[] = [];
   for (let m = 1; m <= 12; m++) {
