@@ -21,7 +21,7 @@ function defaultYear(): number {
 type Tab = 'all' | string;
 
 export default function Home() {
-  const [year, setYear] = useState(defaultYear);
+  const [year, setYear] = useState(defaultYear());
   const [activeTab, setActiveTab] = useState<Tab>('all');
 
   const countryCodes = activeTab === 'all' ? ALL_CODES : [activeTab];
