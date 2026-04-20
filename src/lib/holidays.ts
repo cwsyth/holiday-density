@@ -779,6 +779,7 @@ function buildCzechPeriods(): HolidayPeriod[] {
  * France school holidays are staggered by the three metropolitan education zones
  * (A, B, C). Near-term dates are sourced from OpenHolidays; later years are
  * calendar-based estimates to keep the model continuous through 2030.
+ * Tuple format is [startMonth, startDay, endMonth, endDay].
  */
 const FR_WINTER: Record<'ZA' | 'ZB' | 'ZC', BreakTuple[]> = {
   ZA: [[2,23,3, 9],[2, 8,2,22],[2,14,2,28],[2,27,3,12],[2,10,2,24],[2,16,3, 2]],
@@ -811,6 +812,7 @@ const FR_ALL_SAINTS: BreakTuple[] = [
 ];
 
 function buildFranceRegions(): RegionHolidays[] {
+  // Population units are in thousands, matching CountryHolidays.population.
   const zones: { code: 'ZA' | 'ZB' | 'ZC'; name: string; population: number }[] = [
     { code: 'ZA', name: 'Zone A', population: 22_800 },
     { code: 'ZB', name: 'Zone B', population: 22_700 },
@@ -1077,7 +1079,8 @@ export function getQuietestWindows(
   if (candidates.length === 0) return [];
 
   const minAvg = candidates[0].avgDensity;
-  // Sliding-window averages are floating-point values, so compare with tolerance.
+  // Sliding-window averages are floating-point values; 1e-9 safely absorbs tiny
+  // precision noise while still treating practically-equal minima as ties.
   const EPSILON = 1e-9;
   const result = candidates.filter((w) => Math.abs(w.avgDensity - minAvg) <= EPSILON);
 
