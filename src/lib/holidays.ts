@@ -938,3 +938,54 @@ export function getDensityMap(year: number, countryCodes: string[]): Map<string,
 
   return map;
 }
+
+/**
+ * Returns the top `topN` non-overlapping windows of `windowDays` consecutive days
+ * with the lowest average density, sorted chronologically.
+ */
+export function getQuietestWindows(
+  densityMap: Map<string, number>,
+  year: number,
+  windowDays: number,
+  topN: number,
+): Array<{ start: string; end: string; avgDensity: number }> {
+  // Build ordered list of all dates in the year
+  const allDates: string[] = [];
+  for (let m = 1; m <= 12; m++) {
+    const daysInMonth = new Date(year, m, 0).getDate();
+    for (let d = 1; d <= daysInMonth; d++) {
+      allDates.push(
+        `${year}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`,
+      );
+    }
+  }
+
+  // Compute average density for every possible sliding window
+  const candidates: Array<{ start: string; end: string; avgDensity: number }> = [];
+  for (let i = 0; i <= allDates.length - windowDays; i++) {
+    let sum = 0;
+    for (let j = i; j < i + windowDays; j++) {
+      sum += densityMap.get(allDates[j]) ?? 0;
+    }
+    candidates.push({
+      start: allDates[i],
+      end: allDates[i + windowDays - 1],
+      avgDensity: sum / windowDays,
+    });
+  }
+
+  // Sort by average density ascending (quietest first)
+  candidates.sort((a, b) => a.avgDensity - b.avgDensity);
+
+  // Pick top N non-overlapping windows
+  const result: Array<{ start: string; end: string; avgDensity: number }> = [];
+  for (const w of candidates) {
+    if (result.length >= topN) break;
+    const overlaps = result.some((r) => !(w.end < r.start || w.start > r.end));
+    if (!overlaps) result.push(w);
+  }
+
+  // Return in chronological order
+  result.sort((a, b) => (a.start < b.start ? -1 : 1));
+  return result;
+}
