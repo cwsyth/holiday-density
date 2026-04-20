@@ -1058,7 +1058,7 @@ export function getQuietestWindows(
   // UI only exposes trip lengths from 3 to 30 days.
   const MIN_WINDOW_DAYS = 3;
   const MAX_WINDOW_DAYS = 30;
-  // Average-density tolerance scaling: 0.2 (~2%) for short trips up to +0.8 (~8%) for long trips.
+  // Average-density tolerance scaling: 0.2 (~2%) for short trips up to +1.0 (~10%) for long trips.
   const MIN_AVG_SLACK = 0.2;
   const AVG_SLACK_RANGE = 0.8;
   // Peak-day cap scaling: starts at density 2 (~20%), scales up by 3 steps, and never exceeds density 5 (~50%).
