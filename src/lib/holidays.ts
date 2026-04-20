@@ -1055,6 +1055,17 @@ export function getQuietestWindows(
   year: number,
   windowDays: number,
 ): Array<{ start: string; end: string; avgDensity: number }> {
+  // UI only exposes trip lengths from 3 to 30 days.
+  const MIN_WINDOW_DAYS = 3;
+  const MAX_WINDOW_DAYS = 30;
+  // Average-density tolerance scaling: 0.2 (~2%) for short trips up to +1.0 (~10%) for long trips.
+  const MIN_AVG_SLACK = 0.2;
+  const AVG_SLACK_RANGE = 0.8;
+  // Peak-day cap scaling: starts at density 2 (~20%), scales up by 3 steps, and never exceeds density 5 (~50%).
+  const MIN_PEAK_DENSITY = 2;
+  const PEAK_DENSITY_STEPS = 3;
+  const MAX_PEAK_DENSITY = 5;
+
   // Build ordered list of all dates in the year
   const allDates: string[] = [];
   for (let m = 1; m <= 12; m++) {
@@ -1066,32 +1077,62 @@ export function getQuietestWindows(
     }
   }
 
-  // Compute average density for every possible sliding window
-  const candidates: Array<{ start: string; end: string; avgDensity: number }> = [];
+  // Compute average and peak density for every possible sliding window
+  const candidates: Array<{ start: string; end: string; avgDensity: number; peakDensity: number }> = [];
   for (let i = 0; i <= allDates.length - windowDays; i++) {
     let sum = 0;
+    let peak = 0;
     for (let j = i; j < i + windowDays; j++) {
-      sum += densityMap.get(allDates[j]) ?? 0;
+      const density = densityMap.get(allDates[j]) ?? 0;
+      sum += density;
+      if (density > peak) peak = density;
     }
     candidates.push({
       start: allDates[i],
       end: allDates[i + windowDays - 1],
       avgDensity: sum / windowDays,
+      peakDensity: peak,
     });
   }
 
-  // Sort by average density ascending (quietest first)
+  // Sort by average density ascending (quietest first).
   candidates.sort((a, b) => a.avgDensity - b.avgDensity);
 
   if (candidates.length === 0) return [];
 
   const minAvg = candidates[0].avgDensity;
+
+  // Allow a larger average-density tolerance for longer trips:
+  // 3-day windows tolerate ~2% extra, 30-day windows tolerate ~10% extra.
+  const normalized = Math.min(
+    1,
+    Math.max(0, (windowDays - MIN_WINDOW_DAYS) / (MAX_WINDOW_DAYS - MIN_WINDOW_DAYS)),
+  );
+  const avgSlack = MIN_AVG_SLACK + normalized * AVG_SLACK_RANGE;
+  const maxAllowedAvg = minAvg + avgSlack;
+
+  // Also cap single-day spikes to keep highlighted windows intuitively quiet.
+  // 3-day windows allow up to ~20% (density=2), 30-day windows up to ~50% (density=5).
+  const maxAllowedPeak = Math.min(
+    MAX_PEAK_DENSITY,
+    MIN_PEAK_DENSITY + Math.floor(normalized * PEAK_DENSITY_STEPS),
+  );
+
+  const thresholdMatches = candidates.filter(
+    (w) => w.avgDensity <= maxAllowedAvg && w.peakDensity <= maxAllowedPeak,
+  );
+
+  // Fallback: if thresholding is too strict for a specific year/country mix,
+  // fall back to the original exact-minimum behavior.
   // Sliding-window averages are floating-point values; 1e-9 safely absorbs tiny
   // precision noise while still treating practically-equal minima as ties.
   const EPSILON = 1e-9;
-  const result = candidates.filter((w) => Math.abs(w.avgDensity - minAvg) <= EPSILON);
+  const result =
+    thresholdMatches.length > 0
+      ? thresholdMatches
+      : candidates.filter((w) => Math.abs(w.avgDensity - minAvg) <= EPSILON);
 
   // Return in chronological order
   result.sort((a, b) => (a.start < b.start ? -1 : 1));
-  return result;
+  return result.map(({ start, end, avgDensity }) => ({ start, end, avgDensity }));
 }
