@@ -25,6 +25,8 @@ const DENSITY_MAX = 10;
 // Supported trip-length choices from 3 to 30 days inclusive.
 const WINDOW_DURATIONS = Array.from({ length: 28 }, (_, i) => i + 3);
 type WindowDays = number;
+type QuietWindow = { start: string; end: string; avgDensity: number };
+type QuietWindowBlock = QuietWindow & { windowCount: number };
 
 function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
@@ -46,6 +48,13 @@ function densityColor(density: number): string {
   ];
   // density 1 → colors[0], density 10 → colors[9]
   return colors[Math.min(density - 1, colors.length - 1)];
+}
+
+function addDays(dateStr: string, days: number): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  date.setDate(date.getDate() + days);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
 /** Format a YYYY-MM-DD string as "Mon D, YYYY". */
@@ -111,18 +120,41 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
   // ---------------------------------------------------------------------------
   // Best-time windows
   // ---------------------------------------------------------------------------
-  const bestTimeWindows = React.useMemo(() => {
+  const bestTimeWindows = React.useMemo<QuietWindow[]>(() => {
     if (!showBestTime) return [];
     return getQuietestWindows(densityMap, year, windowDays);
   }, [showBestTime, densityMap, year, windowDays]);
 
+  const quietestBlocks = React.useMemo<QuietWindowBlock[]>(() => {
+    if (bestTimeWindows.length === 0) return [];
+
+    const blocks: QuietWindowBlock[] = [];
+    let current: QuietWindowBlock = { ...bestTimeWindows[0], windowCount: 1 };
+
+    for (let i = 1; i < bestTimeWindows.length; i++) {
+      const next = bestTimeWindows[i];
+      const isConsecutiveOrOverlapping = next.start <= addDays(current.end, 1);
+
+      if (isConsecutiveOrOverlapping) {
+        if (next.end > current.end) current.end = next.end;
+        current.windowCount += 1;
+      } else {
+        blocks.push(current);
+        current = { ...next, windowCount: 1 };
+      }
+    }
+
+    blocks.push(current);
+    return blocks;
+  }, [bestTimeWindows]);
+
   const bestTimeSet = React.useMemo(() => {
     const set = new Set<string>();
-    for (const w of bestTimeWindows) {
-      eachDate(w.start, w.end, (d) => set.add(d));
+    for (const block of quietestBlocks) {
+      eachDate(block.start, block.end, (d) => set.add(d));
     }
     return set;
-  }, [bestTimeWindows]);
+  }, [quietestBlocks]);
 
   // ---------------------------------------------------------------------------
   // Range stats
@@ -340,7 +372,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
 
           {/* Single-day info panel */}
           {effectiveSelection.phase === 'single' && singleInfo && (
-            <div className="mt-3 p-3 bg-slate-900 rounded-lg text-white text-xs relative">
+            <div className="mt-3 p-3 bg-slate-800 rounded-lg text-white text-xs relative">
               <button
                 onClick={() => setSelectionState({ phase: 'idle', viewKey })}
                 className="absolute top-2 right-2 text-gray-400 hover:text-white leading-none"
@@ -365,7 +397,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
 
           {/* Range stats panel */}
           {effectiveSelection.phase === 'range' && rangeStats && (
-            <div className="mt-3 p-3 bg-slate-900 rounded-lg text-white text-xs relative">
+            <div className="mt-3 p-3 bg-slate-800 rounded-lg text-white text-xs relative">
               <button
                 onClick={() => setSelectionState({ phase: 'idle', viewKey })}
                 className="absolute top-2 right-2 text-gray-400 hover:text-white leading-none"
@@ -429,17 +461,17 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
       {/* ------------------------------------------------------------------ */}
 
       {/* Best-time windows panel */}
-      {showBestTime && bestTimeWindows.length > 0 && (
-        <div className="mt-3 p-3 bg-slate-900 rounded-lg text-white text-xs">
+      {showBestTime && quietestBlocks.length > 0 && (
+        <div className="mt-3 p-3 bg-slate-800 rounded-lg text-white text-xs">
           <div className="font-semibold text-emerald-400 mb-2">
-            🌿 {bestTimeWindows.length} tied-for-quietest {windowDays}-day period{bestTimeWindows.length !== 1 ? 's' : ''} in {year}
+            🌿 {quietestBlocks.length} quietest period block{quietestBlocks.length !== 1 ? 's' : ''} for {windowDays}-day trips in {year}
           </div>
           <div className="space-y-1.5">
-            {bestTimeWindows.map((w, i) => (
-              <div key={w.start} className="flex items-center gap-2">
+            {quietestBlocks.map((w, i) => (
+              <div key={`${w.start}-${w.end}`} className="flex items-center gap-2">
                 <span className="text-gray-400 w-4 shrink-0">{i + 1}.</span>
                 <div className="w-2 h-2 rounded-sm ring-2 ring-emerald-400 dark:ring-emerald-300 bg-transparent shrink-0" />
-                <span className="text-gray-100">
+                <span className="text-gray-100 truncate">
                   {formatDateStr(w.start)} – {formatDateStr(w.end)}
                 </span>
                 <span className="text-emerald-400 ml-auto shrink-0">
@@ -449,7 +481,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
             ))}
           </div>
           <div className="mt-2 text-gray-500 text-[10px]">
-            Green-ringed cells show these windows on the calendar above.
+            Green-ringed cells show these merged quiet blocks on the calendar above.
           </div>
         </div>
       )}
