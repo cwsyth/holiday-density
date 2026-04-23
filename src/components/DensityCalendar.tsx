@@ -10,6 +10,7 @@ import {
   getQuietestWindows,
   COUNTRIES,
 } from '@/lib/holidays';
+import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type Props = {
@@ -27,13 +28,15 @@ const WINDOW_DURATIONS = Array.from({ length: 28 }, (_, i) => i + 3);
 type WindowDays = number;
 type QuietWindow = { start: string; end: string; avgDensity: number };
 type QuietWindowBlock = QuietWindow & { windowCount: number };
+const WEEKEND_RING_CLASS = 'ring-2 ring-inset ring-fuchsia-400/90';
+const WEEKEND_BG_CLASS = 'bg-fuchsia-200/45';
 
 function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
 }
 
 function densityColor(density: number): string {
-  if (density === 0) return 'bg-gray-100';
+  if (density === 0) return 'bg-slate-100';
   const colors = [
     'bg-blue-100',
     'bg-blue-200',
@@ -292,7 +295,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
                   return (
                     <div
                       key={monthIdx}
-                      className="flex-1 h-3 sm:h-4 m-px rounded-sm bg-gray-50"
+                      className="flex-1 h-3 sm:h-4 m-px rounded-sm bg-slate-300/60"
                     />
                   );
                 }
@@ -319,21 +322,31 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
                 const isInBestTime = showBestTime && dateStr !== null && bestTimeSet.has(dateStr);
 
                 let ringClass = '';
+                let stateBgClass = '';
                 if (isSingleSelected || isRangeEndpoint) {
                   ringClass = 'ring-2 sm:ring-[3px] ring-cyan-300';
+                  stateBgClass = 'bg-cyan-500/65';
                 } else if (isInRange) {
                   ringClass = 'ring-2 sm:ring-[3px] ring-amber-400';
+                  stateBgClass = 'bg-amber-400/55';
                 } else if (isInBestTime) {
                   ringClass = 'ring-2 sm:ring-[3px] ring-emerald-400';
+                  stateBgClass = 'bg-emerald-500/50';
                 } else if (isWeekend) {
-                  ringClass = 'ring-1 ring-inset ring-black/10';
+                  ringClass = WEEKEND_RING_CLASS;
+                  stateBgClass = WEEKEND_BG_CLASS;
                 }
 
                 return (
                   <Tooltip key={monthIdx}>
                     <TooltipTrigger asChild>
                       <div
-                        className={`flex-1 h-3 sm:h-4 m-px rounded-sm cursor-pointer transition-opacity hover:opacity-80 ${bg} ${ringClass}`}
+                        className={cn(
+                          'flex-1 h-3 sm:h-4 m-px rounded-sm cursor-pointer transition-opacity hover:opacity-80',
+                          bg,
+                          stateBgClass,
+                          ringClass,
+                        )}
                         onClick={() => dateStr && handleCellClick(dateStr)}
                       />
                     </TooltipTrigger>
@@ -352,7 +365,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
           <div className="flex mt-2">
             <div className="w-5 sm:w-7 shrink-0" />
             <div className="flex-1 flex items-center gap-1 text-xs text-gray-400">
-              <div className="w-3 h-3 rounded-sm ring-1 ring-inset ring-black/10 dark:ring-white/20 bg-gray-100" />
+              <div className={cn('w-3 h-3 rounded-sm', WEEKEND_RING_CLASS, WEEKEND_BG_CLASS)} />
               <span>Weekend</span>
             </div>
           </div>
