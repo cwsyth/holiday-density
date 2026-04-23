@@ -320,13 +320,13 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
 
                 let ringClass = '';
                 if (isSingleSelected || isRangeEndpoint) {
-                  ringClass = 'ring-2 sm:ring-[3px] ring-cyan-300 dark:ring-cyan-400';
+                  ringClass = 'ring-2 sm:ring-[3px] ring-cyan-300';
                 } else if (isInRange) {
-                  ringClass = 'ring-2 sm:ring-[3px] ring-amber-400 dark:ring-amber-300';
+                  ringClass = 'ring-2 sm:ring-[3px] ring-amber-400';
                 } else if (isInBestTime) {
-                  ringClass = 'ring-2 sm:ring-[3px] ring-emerald-400 dark:ring-emerald-300';
+                  ringClass = 'ring-2 sm:ring-[3px] ring-emerald-400';
                 } else if (isWeekend) {
-                  ringClass = 'ring-1 ring-inset ring-black/10 dark:ring-white/20';
+                  ringClass = 'ring-1 ring-inset ring-black/10';
                 }
 
                 return (
@@ -442,7 +442,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
                   aria-label="Trip length"
                   value={windowDays}
                   onChange={(e) => setWindowDays(Number(e.target.value))}
-                  className="h-8 rounded-full border border-gray-200 bg-white px-3 text-xs text-gray-700 dark:bg-zinc-800 dark:border-zinc-600 dark:text-gray-200"
+                  className="h-8 rounded-full border border-gray-200 bg-white px-3 text-xs text-gray-700"
                 >
                   {WINDOW_DURATIONS.map((d) => (
                     <option key={d} value={d}>
@@ -470,7 +470,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
             {quietestBlocks.map((w, i) => (
               <div key={`${w.start}-${w.end}`} className="flex items-center gap-2">
                 <span className="text-gray-400 w-4 shrink-0">{i + 1}.</span>
-                <div className="w-2 h-2 rounded-sm ring-2 sm:ring-[3px] ring-emerald-400 dark:ring-emerald-300 bg-transparent shrink-0" />
+                <div className="w-2 h-2 rounded-sm ring-2 sm:ring-[3px] ring-emerald-400 bg-transparent shrink-0" />
                 <span className="text-gray-100 truncate">
                   {formatDateStr(w.start)} – {formatDateStr(w.end)}
                 </span>
