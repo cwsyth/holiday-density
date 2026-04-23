@@ -28,26 +28,27 @@ const WINDOW_DURATIONS = Array.from({ length: 28 }, (_, i) => i + 3);
 type WindowDays = number;
 type QuietWindow = { start: string; end: string; avgDensity: number };
 type QuietWindowBlock = QuietWindow & { windowCount: number };
-const WEEKEND_RING_CLASS = 'ring-2 ring-inset ring-fuchsia-400/90';
-const WEEKEND_BG_CLASS = 'bg-fuchsia-200/45';
+const WEEKEND_RING_CLASS = 'ring-1 ring-inset ring-zinc-600/70';
+const WEEKEND_BG_CLASS =
+  'bg-zinc-700/65 bg-[repeating-linear-gradient(135deg,rgba(113,122,138,0.45)_0px,rgba(113,122,138,0.45)_2px,rgba(56,62,75,0.65)_2px,rgba(56,62,75,0.65)_5px)]';
 
 function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
 }
 
 function densityColor(density: number): string {
-  if (density === 0) return 'bg-slate-100';
+  if (density === 0) return 'bg-slate-700/70';
   const colors = [
-    'bg-blue-100',
-    'bg-blue-200',
-    'bg-blue-300',
-    'bg-blue-400',
-    'bg-blue-500',
-    'bg-blue-600',
-    'bg-indigo-600',
-    'bg-indigo-700',
-    'bg-indigo-800',
-    'bg-indigo-900',
+    'bg-[#b8eadf]',
+    'bg-[#81d5c9]',
+    'bg-[#56c8c8]',
+    'bg-[#84c8ff]',
+    'bg-[#4ca9ff]',
+    'bg-[#2f78ff]',
+    'bg-[#3557f0]',
+    'bg-[#5b3fe6]',
+    'bg-[#7430df]',
+    'bg-[#8d2df5]',
   ];
   // density 1 → colors[0], density 10 → colors[9]
   return colors[Math.min(density - 1, colors.length - 1)];
@@ -295,7 +296,11 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
                   return (
                     <div
                       key={monthIdx}
-                      className="flex-1 h-3 sm:h-4 m-px rounded-sm bg-slate-300/60"
+                      className={cn(
+                        'flex-1 h-3 sm:h-4 m-px rounded-sm',
+                        WEEKEND_RING_CLASS,
+                        WEEKEND_BG_CLASS,
+                      )}
                     />
                   );
                 }
