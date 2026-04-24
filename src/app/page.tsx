@@ -52,7 +52,9 @@ function parseDateForYear(value: string | null, year: number): string | null {
   if (!value) return null;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
   const [y, m, d] = value.split('-').map(Number);
-  if (y !== year || m < 1 || m > 12 || d < 1 || d > 31) return null;
+  if (y !== year || m < 1 || m > 12 || d < 1) return null;
+  const maxDaysForMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  if (d > maxDaysForMonth) return null;
   const date = new Date(Date.UTC(y, m - 1, d));
   const isExact =
     date.getUTCFullYear() === y &&
@@ -105,6 +107,7 @@ function getInitialUiState(): UiState {
 export default function Home() {
   const [uiState, setUiState] = useState<UiState>(getInitialUiState);
   const [shareState, setShareState] = useState<ShareState>('idle');
+  const [isTransparencyOpen, setIsTransparencyOpen] = useState(false);
 
   const { year, activeTab, showBestTime, windowDays, selectedRangeStart, selectedRangeEnd } = uiState;
   const countryCodes = activeTab === 'all' ? ALL_CODES : [activeTab];
@@ -298,8 +301,15 @@ export default function Home() {
         </Card>
 
         <Card className="mt-4 shadow-sm bg-zinc-800 border-zinc-700 text-zinc-100">
-          <details className="group">
-            <summary className="list-none cursor-pointer px-3 sm:px-6 py-3">
+          <details
+            className="group"
+            open={isTransparencyOpen}
+            onToggle={(e) => setIsTransparencyOpen((e.currentTarget as HTMLDetailsElement).open)}
+          >
+            <summary
+              aria-expanded={isTransparencyOpen}
+              className="list-none cursor-pointer px-3 sm:px-6 py-3"
+            >
               <div className="flex items-center justify-between gap-3">
                 <div className="text-base font-semibold text-zinc-100">Data quality & source transparency</div>
                 <span
