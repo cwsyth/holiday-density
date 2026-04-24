@@ -23,6 +23,12 @@ function defaultYear(): number {
 
 type Tab = 'all' | string;
 type ShareState = 'idle' | 'copied' | 'error';
+type UiState = {
+  year: number;
+  activeTab: Tab;
+  showBestTime: boolean;
+  windowDays: number;
+};
 
 function parseYear(value: string | null): number {
   const n = Number(value);
@@ -46,13 +52,29 @@ function confidenceBadgeClass(confidence: 'high' | 'medium' | 'approximate'): st
   return 'bg-zinc-500/20 text-zinc-100 border-zinc-400/30';
 }
 
+function getInitialUiState(): UiState {
+  const fallback: UiState = {
+    year: defaultYear(),
+    activeTab: 'all',
+    showBestTime: false,
+    windowDays: DEFAULT_WINDOW_DAYS,
+  };
+  if (typeof window === 'undefined') return fallback;
+
+  const params = new URLSearchParams(window.location.search);
+  return {
+    year: parseYear(params.get('y')),
+    activeTab: parseCountry(params.get('c')),
+    showBestTime: params.get('q') === '1',
+    windowDays: parseWindowDays(params.get('w')),
+  };
+}
+
 export default function Home() {
-  const [year, setYear] = useState(defaultYear());
-  const [activeTab, setActiveTab] = useState<Tab>('all');
-  const [showBestTime, setShowBestTime] = useState(false);
-  const [windowDays, setWindowDays] = useState(DEFAULT_WINDOW_DAYS);
+  const [uiState, setUiState] = useState<UiState>(getInitialUiState);
   const [shareState, setShareState] = useState<ShareState>('idle');
 
+  const { year, activeTab, showBestTime, windowDays } = uiState;
   const countryCodes = activeTab === 'all' ? ALL_CODES : [activeTab];
   const activeCountry = COUNTRIES.find((c) => c.code === activeTab);
   const detailsByCode = useMemo(
@@ -64,20 +86,6 @@ export default function Home() {
     () => COUNTRIES.filter((c) => activeTab === 'all' || c.code === activeTab),
     [activeTab],
   );
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const params = new URLSearchParams(window.location.search);
-    const parsedYear = parseYear(params.get('y'));
-    const parsedCountry = parseCountry(params.get('c'));
-    const parsedShowBestTime = params.get('q') === '1';
-    const parsedWindowDays = parseWindowDays(params.get('w'));
-
-    setYear(parsedYear);
-    setActiveTab(parsedCountry);
-    setShowBestTime(parsedShowBestTime);
-    setWindowDays(parsedWindowDays);
-  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -135,7 +143,7 @@ export default function Home() {
                   key={y}
                   variant={y === year ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setYear(y)}
+                  onClick={() => setUiState((prev) => ({ ...prev, year: y }))}
                   className="h-8 px-3 text-sm"
                 >
                   {y}
@@ -146,7 +154,7 @@ export default function Home() {
             {/* Country tab selector */}
             <div className="flex flex-wrap gap-1.5">
               <button
-                onClick={() => setActiveTab('all')}
+                onClick={() => setUiState((prev) => ({ ...prev, activeTab: 'all' }))}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                   activeTab === 'all'
                     ? 'bg-indigo-600 text-white shadow-sm'
@@ -158,7 +166,7 @@ export default function Home() {
               {COUNTRIES.map((c) => (
                 <button
                   key={c.code}
-                  onClick={() => setActiveTab(c.code)}
+                  onClick={() => setUiState((prev) => ({ ...prev, activeTab: c.code }))}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1.5 ${
                     activeTab === c.code
                       ? 'bg-indigo-600 text-white shadow-sm'
@@ -217,8 +225,8 @@ export default function Home() {
               countryCodes={countryCodes}
               showBestTime={showBestTime}
               windowDays={windowDays}
-              onShowBestTimeChange={setShowBestTime}
-              onWindowDaysChange={setWindowDays}
+              onShowBestTimeChange={(show) => setUiState((prev) => ({ ...prev, showBestTime: show }))}
+              onWindowDaysChange={(days) => setUiState((prev) => ({ ...prev, windowDays: days }))}
             />
           </CardContent>
         </Card>
