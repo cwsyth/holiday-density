@@ -31,17 +31,18 @@ type QuietWindowBlock = QuietWindow & { windowCount: number };
 const INVALID_DAY_RING_CLASS = 'ring-1 ring-inset ring-zinc-600/70';
 const INVALID_DAY_BG_CLASS =
   'bg-zinc-700/65 bg-[repeating-linear-gradient(135deg,rgba(113,122,138,0.45)_0px,rgba(113,122,138,0.45)_2px,rgba(56,62,75,0.65)_2px,rgba(56,62,75,0.65)_5px)]';
-const WEEKEND_RING_CLASS = 'ring-1 ring-inset ring-[#4d5a73]';
-const WEEKEND_BG_CLASS = 'bg-[#2f3b52]';
+const DENSITY_RING_CLASS = 'ring-1 ring-inset ring-[#94a3b8]/55';
+const WEEKEND_RING_CLASS = 'ring-1 ring-inset ring-[#7f94af]/70';
+const WEEKEND_BG_CLASS = 'bg-[#bccce2]';
 
 function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
 }
 
 function densityColor(density: number): string {
-  if (density === 0) return 'bg-[#e5edf7] ring-1 ring-inset ring-[#94a3b8]/60';
+  if (density === 0) return `bg-[#e5edf7] ${DENSITY_RING_CLASS}`;
   const colors = [
-    'bg-[#b8eadf]',
+    'bg-[#d5f1eb]',
     'bg-[#81d5c9]',
     'bg-[#56c8c8]',
     'bg-[#84c8ff]',
@@ -53,7 +54,7 @@ function densityColor(density: number): string {
     'bg-[#8d2df5]',
   ];
   // density 1 → colors[0], density 10 → colors[9]
-  return colors[Math.min(density - 1, colors.length - 1)];
+  return `${colors[Math.min(density - 1, colors.length - 1)]} ${DENSITY_RING_CLASS}`;
 }
 
 function addDays(dateStr: string, days: number): string {
