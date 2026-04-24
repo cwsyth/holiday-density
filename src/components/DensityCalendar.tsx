@@ -18,8 +18,11 @@ type Props = {
   countryCodes: string[];
   showBestTime: boolean;
   windowDays: WindowDays;
+  selectedRangeStart: string | null;
+  selectedRangeEnd: string | null;
   onShowBestTimeChange: (show: boolean) => void;
   onWindowDaysChange: (days: WindowDays) => void;
+  onSelectedRangeChange: (start: string | null, end: string | null) => void;
 };
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -102,18 +105,22 @@ export default function DensityCalendar({
   countryCodes,
   showBestTime,
   windowDays,
+  selectedRangeStart,
+  selectedRangeEnd,
   onShowBestTimeChange,
   onWindowDaysChange,
+  onSelectedRangeChange,
 }: Props) {
   // Key to detect when the view changes (year or selected countries).
   const viewKey = `${year}:${countryCodes.join(',')}`;
 
-  const [selectionState, setSelectionState] = useState<SelectionState & { viewKey: string }>({
-    phase: 'idle',
-    viewKey,
+  const [selectionState, setSelectionState] = useState<SelectionState & { viewKey: string }>(() => {
+    if (selectedRangeStart && selectedRangeEnd) {
+      return { phase: 'range', start: selectedRangeStart, end: selectedRangeEnd, viewKey };
+    }
+    return { phase: 'idle', viewKey };
   });
 
-  // Clear selection when the view changes
   const effectiveSelection: SelectionState =
     selectionState.viewKey === viewKey ? selectionState : { phase: 'idle' };
 
@@ -190,13 +197,16 @@ export default function DensityCalendar({
     const sel = effectiveSelection;
     if (sel.phase === 'idle' || sel.phase === 'range') {
       setSelectionState({ phase: 'single', date: dateStr, viewKey });
+      onSelectedRangeChange(null, null);
     } else {
       // phase === 'single'
       if (dateStr === sel.date) {
         setSelectionState({ phase: 'idle', viewKey });
+        onSelectedRangeChange(null, null);
       } else {
         const [s, e] = dateStr < sel.date ? [dateStr, sel.date] : [sel.date, dateStr];
         setSelectionState({ phase: 'range', start: s, end: e, viewKey });
+        onSelectedRangeChange(s, e);
       }
     }
   }
@@ -402,7 +412,10 @@ export default function DensityCalendar({
           {effectiveSelection.phase === 'single' && singleInfo && (
             <div className="mt-3 p-3 bg-[#1a2233] border border-zinc-700/80 rounded-lg text-white text-xs relative">
               <button
-                onClick={() => setSelectionState({ phase: 'idle', viewKey })}
+                onClick={() => {
+                  setSelectionState({ phase: 'idle', viewKey });
+                  onSelectedRangeChange(null, null);
+                }}
                 className="absolute top-2 right-2 text-gray-400 hover:text-white leading-none"
                 aria-label="Close"
               >
@@ -427,7 +440,10 @@ export default function DensityCalendar({
           {effectiveSelection.phase === 'range' && rangeStats && (
             <div className="mt-3 p-3 bg-[#1a2233] border border-zinc-700/80 rounded-lg text-white text-xs relative">
               <button
-                onClick={() => setSelectionState({ phase: 'idle', viewKey })}
+                onClick={() => {
+                  setSelectionState({ phase: 'idle', viewKey });
+                  onSelectedRangeChange(null, null);
+                }}
                 className="absolute top-2 right-2 text-gray-400 hover:text-white leading-none"
                 aria-label="Close"
               >
