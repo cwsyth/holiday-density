@@ -296,10 +296,7 @@ export default function Home() {
 
         <Card className="mt-4 shadow-sm bg-zinc-800 border-zinc-700 text-zinc-100">
           <details>
-            <summary
-              aria-label="Toggle data quality and source transparency"
-              className="list-none cursor-pointer px-3 sm:px-6 py-3"
-            >
+            <summary className="list-none cursor-pointer px-3 sm:px-6 py-3">
               <div className="text-base font-semibold text-zinc-100">Data quality & source transparency</div>
               <p className="text-xs mt-1 text-zinc-400">
                 Expand for source links, last-updated dates, confidence notes, and modelling references.
@@ -308,12 +305,11 @@ export default function Home() {
             <CardContent className="px-3 sm:px-6 pb-4">
               <div className="mb-3 rounded-md border border-cyan-700/40 bg-cyan-900/20 p-3 text-xs text-cyan-100">
                 Near-term public-holiday baselines are modelled from OpenHolidays API data.
-                {' '}
                 <a
                   href="https://github.com/openpotato/openholidaysapi"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-cyan-300 hover:text-cyan-200 underline underline-offset-2"
+                  className="ml-1 text-cyan-300 hover:text-cyan-200 underline underline-offset-2"
                 >
                   OpenHolidays API (GitHub)
                 </a>
