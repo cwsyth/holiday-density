@@ -28,16 +28,18 @@ const WINDOW_DURATIONS = Array.from({ length: 28 }, (_, i) => i + 3);
 type WindowDays = number;
 type QuietWindow = { start: string; end: string; avgDensity: number };
 type QuietWindowBlock = QuietWindow & { windowCount: number };
-const WEEKEND_RING_CLASS = 'ring-1 ring-inset ring-zinc-600/70';
-const WEEKEND_BG_CLASS =
+const INVALID_DAY_RING_CLASS = 'ring-1 ring-inset ring-zinc-600/70';
+const INVALID_DAY_BG_CLASS =
   'bg-zinc-700/65 bg-[repeating-linear-gradient(135deg,rgba(113,122,138,0.45)_0px,rgba(113,122,138,0.45)_2px,rgba(56,62,75,0.65)_2px,rgba(56,62,75,0.65)_5px)]';
+const WEEKEND_RING_CLASS = 'ring-1 ring-inset ring-[#4d5a73]';
+const WEEKEND_BG_CLASS = 'bg-[#2f3b52]';
 
 function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
 }
 
 function densityColor(density: number): string {
-  if (density === 0) return 'bg-slate-700/70';
+  if (density === 0) return 'bg-[#e5edf7] ring-1 ring-inset ring-[#94a3b8]/60';
   const colors = [
     'bg-[#b8eadf]',
     'bg-[#81d5c9]',
@@ -298,8 +300,8 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
                       key={monthIdx}
                       className={cn(
                         'flex-1 h-3 sm:h-4 m-px rounded-sm',
-                        WEEKEND_RING_CLASS,
-                        WEEKEND_BG_CLASS,
+                        INVALID_DAY_RING_CLASS,
+                        INVALID_DAY_BG_CLASS,
                       )}
                     />
                   );
@@ -390,7 +392,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
 
           {/* Single-day info panel */}
           {effectiveSelection.phase === 'single' && singleInfo && (
-            <div className="mt-3 p-3 bg-zinc-800 rounded-lg text-white text-xs relative">
+            <div className="mt-3 p-3 bg-[#1a2233] border border-zinc-700/80 rounded-lg text-white text-xs relative">
               <button
                 onClick={() => setSelectionState({ phase: 'idle', viewKey })}
                 className="absolute top-2 right-2 text-gray-400 hover:text-white leading-none"
@@ -415,7 +417,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
 
           {/* Range stats panel */}
           {effectiveSelection.phase === 'range' && rangeStats && (
-            <div className="mt-3 p-3 bg-zinc-800 rounded-lg text-white text-xs relative">
+            <div className="mt-3 p-3 bg-[#1a2233] border border-zinc-700/80 rounded-lg text-white text-xs relative">
               <button
                 onClick={() => setSelectionState({ phase: 'idle', viewKey })}
                 className="absolute top-2 right-2 text-gray-400 hover:text-white leading-none"
