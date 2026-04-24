@@ -28,6 +28,8 @@ type UiState = {
   activeTab: Tab;
   showBestTime: boolean;
   windowDays: number;
+  selectedRangeStart: string | null;
+  selectedRangeEnd: string | null;
 };
 
 function parseYear(value: string | null): number {
@@ -46,6 +48,27 @@ function parseWindowDays(value: string | null): number {
   return Math.min(MAX_WINDOW_DAYS, Math.max(MIN_WINDOW_DAYS, n));
 }
 
+function parseDateForYear(value: string | null, year: number): string | null {
+  if (!value) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  if (!value.startsWith(`${year}-`)) return null;
+  const date = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return null;
+  const normalized = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+  return normalized === value ? value : null;
+}
+
+function parseSelectedRange(startValue: string | null, endValue: string | null, year: number): {
+  selectedRangeStart: string | null;
+  selectedRangeEnd: string | null;
+} {
+  const start = parseDateForYear(startValue, year);
+  const end = parseDateForYear(endValue, year);
+  if (!start || !end) return { selectedRangeStart: null, selectedRangeEnd: null };
+  if (start > end) return { selectedRangeStart: null, selectedRangeEnd: null };
+  return { selectedRangeStart: start, selectedRangeEnd: end };
+}
+
 function confidenceBadgeClass(confidence: 'high' | 'medium' | 'approximate'): string {
   if (confidence === 'high') return 'bg-emerald-500/20 text-emerald-200 border-emerald-400/30';
   if (confidence === 'medium') return 'bg-amber-500/20 text-amber-100 border-amber-400/30';
@@ -58,15 +81,21 @@ function getInitialUiState(): UiState {
     activeTab: 'all',
     showBestTime: false,
     windowDays: DEFAULT_WINDOW_DAYS,
+    selectedRangeStart: null,
+    selectedRangeEnd: null,
   };
   if (typeof window === 'undefined') return fallback;
 
   const params = new URLSearchParams(window.location.search);
+  const year = parseYear(params.get('y'));
+  const selectedRange = parseSelectedRange(params.get('s'), params.get('e'), year);
   return {
-    year: parseYear(params.get('y')),
+    year,
     activeTab: parseCountry(params.get('c')),
     showBestTime: params.get('q') === '1',
     windowDays: parseWindowDays(params.get('w')),
+    selectedRangeStart: selectedRange.selectedRangeStart,
+    selectedRangeEnd: selectedRange.selectedRangeEnd,
   };
 }
 
@@ -74,7 +103,7 @@ export default function Home() {
   const [uiState, setUiState] = useState<UiState>(getInitialUiState);
   const [shareState, setShareState] = useState<ShareState>('idle');
 
-  const { year, activeTab, showBestTime, windowDays } = uiState;
+  const { year, activeTab, showBestTime, windowDays, selectedRangeStart, selectedRangeEnd } = uiState;
   const countryCodes = activeTab === 'all' ? ALL_CODES : [activeTab];
   const activeCountry = COUNTRIES.find((c) => c.code === activeTab);
   const detailsByCode = useMemo(
@@ -100,10 +129,18 @@ export default function Home() {
     if (showBestTime && windowDays !== DEFAULT_WINDOW_DAYS) params.set('w', String(windowDays));
     else params.delete('w');
 
+    if (selectedRangeStart && selectedRangeEnd) {
+      params.set('s', selectedRangeStart);
+      params.set('e', selectedRangeEnd);
+    } else {
+      params.delete('s');
+      params.delete('e');
+    }
+
     const query = params.toString();
     const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}`;
     window.history.replaceState(null, '', nextUrl);
-  }, [year, activeTab, showBestTime, windowDays]);
+  }, [year, activeTab, showBestTime, windowDays, selectedRangeStart, selectedRangeEnd]);
 
   async function copyShareLink() {
     if (typeof window === 'undefined') return;
@@ -143,7 +180,14 @@ export default function Home() {
                   key={y}
                   variant={y === year ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setUiState((prev) => ({ ...prev, year: y }))}
+                  onClick={() =>
+                    setUiState((prev) => ({
+                      ...prev,
+                      year: y,
+                      selectedRangeStart: null,
+                      selectedRangeEnd: null,
+                    }))
+                  }
                   className="h-8 px-3 text-sm"
                 >
                   {y}
@@ -154,7 +198,14 @@ export default function Home() {
             {/* Country tab selector */}
             <div className="flex flex-wrap gap-1.5">
               <button
-                onClick={() => setUiState((prev) => ({ ...prev, activeTab: 'all' }))}
+                onClick={() =>
+                  setUiState((prev) => ({
+                    ...prev,
+                    activeTab: 'all',
+                    selectedRangeStart: null,
+                    selectedRangeEnd: null,
+                  }))
+                }
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                   activeTab === 'all'
                     ? 'bg-indigo-600 text-white shadow-sm'
@@ -166,7 +217,14 @@ export default function Home() {
               {COUNTRIES.map((c) => (
                 <button
                   key={c.code}
-                  onClick={() => setUiState((prev) => ({ ...prev, activeTab: c.code }))}
+                  onClick={() =>
+                    setUiState((prev) => ({
+                      ...prev,
+                      activeTab: c.code,
+                      selectedRangeStart: null,
+                      selectedRangeEnd: null,
+                    }))
+                  }
                   className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1.5 ${
                     activeTab === c.code
                       ? 'bg-indigo-600 text-white shadow-sm'
@@ -225,53 +283,72 @@ export default function Home() {
               countryCodes={countryCodes}
               showBestTime={showBestTime}
               windowDays={windowDays}
+              selectedRangeStart={selectedRangeStart}
+              selectedRangeEnd={selectedRangeEnd}
               onShowBestTimeChange={(show) => setUiState((prev) => ({ ...prev, showBestTime: show }))}
               onWindowDaysChange={(days) => setUiState((prev) => ({ ...prev, windowDays: days }))}
+              onSelectedRangeChange={(start, end) =>
+                setUiState((prev) => ({ ...prev, selectedRangeStart: start, selectedRangeEnd: end }))
+              }
             />
           </CardContent>
         </Card>
 
         <Card className="mt-4 shadow-sm bg-zinc-800 border-zinc-700 text-zinc-100">
-          <CardHeader className="pb-3 px-3 sm:px-6">
-            <CardTitle className="text-base">Data quality & source transparency</CardTitle>
-            <CardDescription className="text-xs">
-              Source links, last-updated dates, and confidence notes for the currently viewed country set.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="px-3 sm:px-6 pb-4">
-            <div className="space-y-3">
-              {visibleCountries.map((country) => {
-                const details = detailsByCode.get(country.code);
-                if (!details) return null;
-                return (
-                  <div key={country.code} className="rounded-md border border-zinc-700/80 bg-zinc-900/40 p-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <div className="font-medium text-sm">{country.name}</div>
-                      <Badge variant="outline" className={`text-[10px] ${confidenceBadgeClass(details.confidence)}`}>
-                        {details.confidence} confidence
-                      </Badge>
-                      <span className="text-[10px] text-zinc-400">Last updated: {details.lastUpdated}</span>
+          <details>
+            <summary className="list-none cursor-pointer px-3 sm:px-6 py-3">
+              <CardTitle className="text-base">Data quality & source transparency</CardTitle>
+              <CardDescription className="text-xs mt-1">
+                Expand for source links, last-updated dates, confidence notes, and modelling references.
+              </CardDescription>
+            </summary>
+            <CardContent className="px-3 sm:px-6 pb-4">
+              <div className="mb-3 rounded-md border border-cyan-700/40 bg-cyan-900/20 p-3 text-xs text-cyan-100">
+                Near-term public-holiday baselines are modelled from OpenHolidays API data.
+                {' '}
+                <a
+                  href="https://github.com/openpotato/openholidaysapi"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-cyan-300 hover:text-cyan-200 underline underline-offset-2"
+                >
+                  OpenHolidays API (GitHub)
+                </a>
+              </div>
+              <div className="space-y-3">
+                {visibleCountries.map((country) => {
+                  const details = detailsByCode.get(country.code);
+                  if (!details) return null;
+                  return (
+                    <div key={country.code} className="rounded-md border border-zinc-700/80 bg-zinc-900/40 p-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="font-medium text-sm">{country.name}</div>
+                        <Badge variant="outline" className={`text-[10px] ${confidenceBadgeClass(details.confidence)}`}>
+                          {details.confidence} confidence
+                        </Badge>
+                        <span className="text-[10px] text-zinc-400">Last updated: {details.lastUpdated}</span>
+                      </div>
+                      <p className="mt-1 text-xs text-zinc-300">{details.notes}</p>
+                      <ul className="mt-2 space-y-1">
+                        {details.sources.map((source) => (
+                          <li key={source.url} className="text-xs">
+                            <a
+                              href={source.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-cyan-300 hover:text-cyan-200 underline underline-offset-2"
+                            >
+                              {source.label}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                    <p className="mt-1 text-xs text-zinc-300">{details.notes}</p>
-                    <ul className="mt-2 space-y-1">
-                      {details.sources.map((source) => (
-                        <li key={source.url} className="text-xs">
-                          <a
-                            href={source.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-cyan-300 hover:text-cyan-200 underline underline-offset-2"
-                          >
-                            {source.label}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </details>
         </Card>
 
         <footer className="mt-8 text-center text-xs text-zinc-400">
