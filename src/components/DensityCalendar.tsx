@@ -39,7 +39,7 @@ function getDaysInMonth(year: number, month: number): number {
 }
 
 function densityColor(density: number): string {
-  if (density === 0) return 'bg-[#dbe4f0]';
+  if (density === 0) return 'bg-[#e5edf7] ring-1 ring-inset ring-[#94a3b8]/60';
   const colors = [
     'bg-[#b8eadf]',
     'bg-[#81d5c9]',
