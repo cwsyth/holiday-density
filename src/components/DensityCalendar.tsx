@@ -114,17 +114,15 @@ export default function DensityCalendar({
   // Key to detect when the view changes (year or selected countries).
   const viewKey = `${year}:${countryCodes.join(',')}`;
 
-  const [selectionState, setSelectionState] = useState<SelectionState & { viewKey: string }>({
-    phase: 'idle',
-    viewKey,
+  const [selectionState, setSelectionState] = useState<SelectionState & { viewKey: string }>(() => {
+    if (selectedRangeStart && selectedRangeEnd) {
+      return { phase: 'range', start: selectedRangeStart, end: selectedRangeEnd, viewKey };
+    }
+    return { phase: 'idle', viewKey };
   });
 
-  const effectiveSelection = React.useMemo<SelectionState>(() => {
-    if (selectedRangeStart && selectedRangeEnd) {
-      return { phase: 'range', start: selectedRangeStart, end: selectedRangeEnd };
-    }
-    return selectionState.viewKey === viewKey ? selectionState : { phase: 'idle' };
-  }, [selectedRangeStart, selectedRangeEnd, selectionState, viewKey]);
+  const effectiveSelection: SelectionState =
+    selectionState.viewKey === viewKey ? selectionState : { phase: 'idle' };
 
   const densityMap = React.useMemo(
     () => getDensityMap(year, countryCodes),

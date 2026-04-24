@@ -51,11 +51,14 @@ function parseWindowDays(value: string | null): number {
 function parseDateForYear(value: string | null, year: number): string | null {
   if (!value) return null;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
-  if (!value.startsWith(`${year}-`)) return null;
-  const date = new Date(`${value}T00:00:00Z`);
-  if (Number.isNaN(date.getTime())) return null;
-  const normalized = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
-  return normalized === value ? value : null;
+  const [y, m, d] = value.split('-').map(Number);
+  if (y !== year || m < 1 || m > 12 || d < 1 || d > 31) return null;
+  const date = new Date(Date.UTC(y, m - 1, d));
+  const isExact =
+    date.getUTCFullYear() === y &&
+    date.getUTCMonth() + 1 === m &&
+    date.getUTCDate() === d;
+  return isExact ? value : null;
 }
 
 function parseSelectedRange(startValue: string | null, endValue: string | null, year: number): {
@@ -295,9 +298,17 @@ export default function Home() {
         </Card>
 
         <Card className="mt-4 shadow-sm bg-zinc-800 border-zinc-700 text-zinc-100">
-          <details>
+          <details className="group">
             <summary className="list-none cursor-pointer px-3 sm:px-6 py-3">
-              <div className="text-base font-semibold text-zinc-100">Data quality & source transparency</div>
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-base font-semibold text-zinc-100">Data quality & source transparency</div>
+                <span
+                  aria-hidden="true"
+                  className="text-zinc-400 transition-transform group-open:rotate-180"
+                >
+                  ▾
+                </span>
+              </div>
               <p className="text-xs mt-1 text-zinc-400">
                 Expand for source links, last-updated dates, confidence notes, and modelling references.
               </p>
