@@ -16,6 +16,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 type Props = {
   year: number;
   countryCodes: string[];
+  showBestTime: boolean;
+  windowDays: WindowDays;
+  onShowBestTimeChange: (show: boolean) => void;
+  onWindowDaysChange: (days: WindowDays) => void;
 };
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -93,7 +97,14 @@ type SelectionState =
   | { phase: 'single'; date: string }
   | { phase: 'range'; start: string; end: string };
 
-export default function DensityCalendar({ year, countryCodes }: Props) {
+export default function DensityCalendar({
+  year,
+  countryCodes,
+  showBestTime,
+  windowDays,
+  onShowBestTimeChange,
+  onWindowDaysChange,
+}: Props) {
   // Key to detect when the view changes (year or selected countries).
   const viewKey = `${year}:${countryCodes.join(',')}`;
 
@@ -101,10 +112,6 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
     phase: 'idle',
     viewKey,
   });
-
-  // Best-time-to-travel state
-  const [showBestTime, setShowBestTime] = useState(false);
-  const [windowDays, setWindowDays] = useState<WindowDays>(7);
 
   // Clear selection when the view changes
   const effectiveSelection: SelectionState =
@@ -447,7 +454,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
           {/* Best time to travel controls */}
           <div className="mt-4 flex items-center gap-2 flex-wrap">
             <button
-              onClick={() => setShowBestTime((v) => !v)}
+              onClick={() => onShowBestTimeChange(!showBestTime)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                 showBestTime
                   ? 'bg-emerald-600 text-white shadow-sm'
@@ -462,7 +469,7 @@ export default function DensityCalendar({ year, countryCodes }: Props) {
                 <select
                   aria-label="Trip length"
                   value={windowDays}
-                  onChange={(e) => setWindowDays(Number(e.target.value))}
+                  onChange={(e) => onWindowDaysChange(Number(e.target.value))}
                   className="h-8 rounded-full border border-gray-200 bg-white px-3 text-xs text-gray-700"
                 >
                   {WINDOW_DURATIONS.map((d) => (

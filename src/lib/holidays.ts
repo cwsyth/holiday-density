@@ -925,6 +925,127 @@ export const COUNTRIES = [
   { code: 'CZ', name: 'Czech Republic', flag: '🇨🇿' },
 ];
 
+export type CountryDataDetails = {
+  code: string;
+  lastUpdated: string;
+  confidence: 'high' | 'medium' | 'approximate';
+  notes: string;
+  sources: Array<{ label: string; url: string }>;
+};
+
+export const COUNTRY_DATA_DETAILS: CountryDataDetails[] = [
+  {
+    code: 'DE',
+    lastUpdated: '2026-04-24',
+    confidence: 'medium',
+    notes: 'National public holidays are state-aware where applicable; school holidays are modelled by state lookup tables and can vary by municipality/school type.',
+    sources: [
+      { label: 'Germany school holidays (ferienwiki)', url: 'https://www.ferienwiki.de/ferien/deutschland/' },
+      { label: 'Germany public holidays (timeanddate)', url: 'https://www.timeanddate.com/holidays/germany/' },
+    ],
+  },
+  {
+    code: 'AT',
+    lastUpdated: '2026-04-24',
+    confidence: 'medium',
+    notes: 'School breaks are modelled in grouped macro-regions; local deviations are possible.',
+    sources: [
+      { label: 'Austria school holidays (oesterreich.gv.at)', url: 'https://www.oesterreich.gv.at/en/themen/familie_und_partnerschaft/schule/Seite.150100.html' },
+      { label: 'Austria public holidays (timeanddate)', url: 'https://www.timeanddate.com/holidays/austria/' },
+    ],
+  },
+  {
+    code: 'CH',
+    lastUpdated: '2026-04-24',
+    confidence: 'approximate',
+    notes: 'Cantonal school calendars are grouped by language region for density modelling.',
+    sources: [
+      { label: 'Swiss school holidays (publicholidays.ch)', url: 'https://publicholidays.ch/school-holidays/' },
+      { label: 'Switzerland public holidays (timeanddate)', url: 'https://www.timeanddate.com/holidays/switzerland/' },
+    ],
+  },
+  {
+    code: 'FR',
+    lastUpdated: '2026-04-24',
+    confidence: 'medium',
+    notes: 'Academic-zone staggering (A/B/C) is modelled for winter and spring breaks.',
+    sources: [
+      { label: 'France school calendar (service-public.fr)', url: 'https://www.service-public.fr/particuliers/vosdroits/F31952' },
+      { label: 'France public holidays (timeanddate)', url: 'https://www.timeanddate.com/holidays/france/' },
+    ],
+  },
+  {
+    code: 'ES',
+    lastUpdated: '2026-04-24',
+    confidence: 'approximate',
+    notes: 'School breaks are modelled nationwide for comparability; autonomous community differences are simplified.',
+    sources: [
+      { label: 'Spain school holidays (publicholidays.es)', url: 'https://publicholidays.es/school-holidays/' },
+      { label: 'Spain public holidays (timeanddate)', url: 'https://www.timeanddate.com/holidays/spain/' },
+    ],
+  },
+  {
+    code: 'BE',
+    lastUpdated: '2026-04-24',
+    confidence: 'medium',
+    notes: 'School calendars are modelled with nationwide assumptions; network/community differences may occur.',
+    sources: [
+      { label: 'Belgium school holidays (publicholidays.be)', url: 'https://publicholidays.be/school-holidays/' },
+      { label: 'Belgium public holidays (timeanddate)', url: 'https://www.timeanddate.com/holidays/belgium/' },
+    ],
+  },
+  {
+    code: 'DK',
+    lastUpdated: '2026-04-24',
+    confidence: 'medium',
+    notes: 'Municipal-level variation is simplified into representative national school break windows.',
+    sources: [
+      { label: 'Denmark school holidays (publicholidays.dk)', url: 'https://publicholidays.dk/school-holidays/' },
+      { label: 'Denmark public holidays (timeanddate)', url: 'https://www.timeanddate.com/holidays/denmark/' },
+    ],
+  },
+  {
+    code: 'IT',
+    lastUpdated: '2026-04-24',
+    confidence: 'approximate',
+    notes: 'Regional school schedule differences are simplified to national windows for density comparability.',
+    sources: [
+      { label: 'Italy school holidays (publicholidays.it)', url: 'https://publicholidays.it/school-holidays/' },
+      { label: 'Italy public holidays (timeanddate)', url: 'https://www.timeanddate.com/holidays/italy/' },
+    ],
+  },
+  {
+    code: 'NO',
+    lastUpdated: '2026-04-24',
+    confidence: 'medium',
+    notes: 'County-level differences are limited and represented with national school break windows.',
+    sources: [
+      { label: 'Norway school holidays (publicholidays.no)', url: 'https://publicholidays.no/school-holidays/' },
+      { label: 'Norway public holidays (timeanddate)', url: 'https://www.timeanddate.com/holidays/norway/' },
+    ],
+  },
+  {
+    code: 'PL',
+    lastUpdated: '2026-04-24',
+    confidence: 'medium',
+    notes: 'Winter holidays are modelled by rotating regional groups; exact voivodeship assignments can change by year.',
+    sources: [
+      { label: 'Poland school holidays (gov.pl)', url: 'https://www.gov.pl/web/edukacja-i-nauka/organizacja-roku-szkolnego' },
+      { label: 'Poland public holidays (timeanddate)', url: 'https://www.timeanddate.com/holidays/poland/' },
+    ],
+  },
+  {
+    code: 'CZ',
+    lastUpdated: '2026-04-24',
+    confidence: 'medium',
+    notes: 'School holiday timing is represented with national-level assumptions.',
+    sources: [
+      { label: 'Czech school holidays (msmt.gov.cz)', url: 'https://msmt.gov.cz/vzdelavani/skolstvi-v-cr/organizace-skolniho-roku' },
+      { label: 'Czech public holidays (timeanddate)', url: 'https://www.timeanddate.com/holidays/czech/' },
+    ],
+  },
+];
+
 export function getHolidaysForCountry(countryCode: string): CountryHolidays | undefined {
   return HOLIDAY_DATA.find((c) => c.code === countryCode);
 }
