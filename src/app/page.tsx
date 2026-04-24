@@ -306,10 +306,7 @@ export default function Home() {
             open={isTransparencyOpen}
             onToggle={(e) => setIsTransparencyOpen((e.currentTarget as HTMLDetailsElement).open)}
           >
-            <summary
-              aria-expanded={isTransparencyOpen}
-              className="list-none cursor-pointer px-3 sm:px-6 py-3"
-            >
+            <summary className="list-none cursor-pointer px-3 sm:px-6 py-3">
               <div className="flex items-center justify-between gap-3">
                 <div className="text-base font-semibold text-zinc-100">Data quality & source transparency</div>
                 <span
