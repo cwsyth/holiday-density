@@ -32,8 +32,8 @@ const INVALID_DAY_RING_CLASS = 'ring-1 ring-inset ring-zinc-600/70';
 const INVALID_DAY_BG_CLASS =
   'bg-zinc-700/65 bg-[repeating-linear-gradient(135deg,rgba(113,122,138,0.45)_0px,rgba(113,122,138,0.45)_2px,rgba(56,62,75,0.65)_2px,rgba(56,62,75,0.65)_5px)]';
 const DENSITY_RING_CLASS = 'ring-1 ring-inset ring-[#94a3b8]/55';
-const WEEKEND_RING_CLASS = 'ring-1 ring-inset ring-[#8fa3bc]/65';
-const WEEKEND_BG_CLASS = 'bg-[#cedaec]';
+const WEEKEND_RING_CLASS = 'ring-1 ring-inset ring-[#7f94af]/70';
+const WEEKEND_BG_CLASS = 'bg-[#bccce2]';
 
 function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
